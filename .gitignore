@@ -1,0 +1,43 @@
+# Directorio del entorno de trabajo de Go
+/bin/
+/pkg/
+/out/
+
+# Archivos ejecutables
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Archivos generados por el compilador
+*.o
+*.a
+
+# Dependencias descargadas
+vendor/
+
+# Archivos de configuración de entornos locales
+.env
+
+# Archivos específicos del sistema operativo
+.DS_Store
+Thumbs.db
+
+# Archivos del editor de texto/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Archivos de log y dumps
+*.log
+*.test
+
+# Cobertura de tests
+coverage.out
+coverage/
+
+# Módulos Go
+go.sum
