@@ -85,32 +85,25 @@ func (q *Queries) GetItem(ctx context.Context, id int32) (GetItemRow, error) {
 }
 
 const listItems = `-- name: ListItems :many
-SELECT id, brand, model, description, created_at 
+SELECT id, brand, model, description, serial_number, created_at
 FROM items
 `
 
-type ListItemsRow struct {
-	ID          int32
-	Brand       string
-	Model       string
-	Description string
-	CreatedAt   sql.NullTime
-}
-
-func (q *Queries) ListItems(ctx context.Context) ([]ListItemsRow, error) {
+func (q *Queries) ListItems(ctx context.Context) ([]Item, error) {
 	rows, err := q.db.QueryContext(ctx, listItems)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []ListItemsRow
+	var items []Item
 	for rows.Next() {
-		var i ListItemsRow
+		var i Item
 		if err := rows.Scan(
 			&i.ID,
 			&i.Brand,
 			&i.Model,
 			&i.Description,
+			&i.SerialNumber,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
