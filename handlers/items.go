@@ -28,11 +28,20 @@ func CreateItem(queries *db.Queries) http.HandlerFunc {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return
 		}
+
+		// Validar que los campos NOT NULL no estén vacíos
+		if item.Brand == "" || item.Model == "" || item.SerialNumber == "" {
+			http.Error(w, "Los campos brand, model y serial_number son obligatorios", http.StatusBadRequest)
+			return
+		}
+
+		// Crear el item
 		createdItem, err := queries.CreateItem(r.Context(), item)
 		if err != nil {
 			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
+
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(createdItem)
 	}
