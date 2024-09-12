@@ -10,13 +10,13 @@ import (
 )
 
 func main() {
-	// Cargar las variables del archivo .env
+	// load .env
 	err := godotenv.Load()
 	if err != nil {
 		log.Fatal("Error al cargar el archivo .env")
 	}
 
-	// Conectar a la base de datos
+	// Connect database
 	conn, err := db.ConnectDB()
 	if err != nil {
 		log.Fatal(err)
@@ -24,9 +24,15 @@ func main() {
 
 	queries := db.New(conn)
 
-	http.HandleFunc("/items", handlers.HandleItems(queries))
-	http.HandleFunc("/items/", handlers.HandleItem(queries))
+	// Item routes
+	mux := http.NewServeMux()
+	mux.HandleFunc("GET /items", handlers.GetItems(queries))
+	mux.HandleFunc("POST /items", handlers.CreateItem(queries))
+	mux.HandleFunc("GET /items/{id}", handlers.GetItem(queries))
+	mux.HandleFunc("PUT /items/{id}", handlers.UpdateItem(queries))
+	mux.HandleFunc("DELETE /items/{id}", handlers.DeleteItem(queries))
 
+	// server init
 	log.Println("Servidor corriendo en http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	log.Fatal(http.ListenAndServe(":8080", mux))
 }
