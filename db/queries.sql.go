@@ -19,7 +19,7 @@ RETURNING id, brand, model, description, created_at
 type CreateItemParams struct {
 	Brand        string
 	Model        string
-	Description  sql.NullString
+	Description  string
 	SerialNumber string
 }
 
@@ -27,7 +27,7 @@ type CreateItemRow struct {
 	ID          int32
 	Brand       string
 	Model       string
-	Description sql.NullString
+	Description string
 	CreatedAt   sql.NullTime
 }
 
@@ -93,7 +93,7 @@ type ListItemsRow struct {
 	ID          int32
 	Brand       string
 	Model       string
-	Description sql.NullString
+	Description string
 	CreatedAt   sql.NullTime
 }
 
@@ -143,7 +143,7 @@ type UpdateItemRow struct {
 	ID          int32
 	Brand       string
 	Model       string
-	Description sql.NullString
+	Description string
 	CreatedAt   sql.NullTime
 }
 

@@ -12,7 +12,7 @@ type Item struct {
 	ID           int32
 	Brand        string
 	Model        string
-	Description  sql.NullString
+	Description  string
 	SerialNumber string
 	CreatedAt    sql.NullTime
 }
