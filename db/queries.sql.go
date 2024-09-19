@@ -11,39 +11,39 @@ import (
 )
 
 const createItem = `-- name: CreateItem :one
-INSERT INTO items (brand, model, description, serial_number) 
+INSERT INTO items (item_brand, item_model, item_description, item_serial_number)
 VALUES ($1, $2, $3, $4)
-RETURNING id, brand, model, description, created_at
+RETURNING item_id, item_brand, item_model, item_description, created_at
 `
 
 type CreateItemParams struct {
-	Brand        string
-	Model        string
-	Description  string
-	SerialNumber string
+	ItemBrand        string
+	ItemModel        string
+	ItemDescription  string
+	ItemSerialNumber string
 }
 
 type CreateItemRow struct {
-	ID          int32
-	Brand       string
-	Model       string
-	Description string
-	CreatedAt   sql.NullTime
+	ItemID          int32
+	ItemBrand       string
+	ItemModel       string
+	ItemDescription string
+	CreatedAt       sql.NullTime
 }
 
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (CreateItemRow, error) {
 	row := q.db.QueryRowContext(ctx, createItem,
-		arg.Brand,
-		arg.Model,
-		arg.Description,
-		arg.SerialNumber,
+		arg.ItemBrand,
+		arg.ItemModel,
+		arg.ItemDescription,
+		arg.ItemSerialNumber,
 	)
 	var i CreateItemRow
 	err := row.Scan(
-		&i.ID,
-		&i.Brand,
-		&i.Model,
-		&i.Description,
+		&i.ItemID,
+		&i.ItemBrand,
+		&i.ItemModel,
+		&i.ItemDescription,
 		&i.CreatedAt,
 	)
 	return i, err
@@ -51,59 +51,106 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (CreateI
 
 const deleteItem = `-- name: DeleteItem :exec
 DELETE FROM items 
-WHERE id = $1
+WHERE item_id = $1
 `
 
-func (q *Queries) DeleteItem(ctx context.Context, id int32) error {
-	_, err := q.db.ExecContext(ctx, deleteItem, id)
+func (q *Queries) DeleteItem(ctx context.Context, itemID int32) error {
+	_, err := q.db.ExecContext(ctx, deleteItem, itemID)
 	return err
 }
 
 const getItem = `-- name: GetItem :one
-SELECT id, brand, model, created_at 
+SELECT item_id, item_brand, item_model, created_at 
 FROM items 
-WHERE id = $1
+WHERE item_id = $1
 `
 
 type GetItemRow struct {
-	ID        int32
-	Brand     string
-	Model     string
+	ItemID    int32
+	ItemBrand string
+	ItemModel string
 	CreatedAt sql.NullTime
 }
 
-func (q *Queries) GetItem(ctx context.Context, id int32) (GetItemRow, error) {
-	row := q.db.QueryRowContext(ctx, getItem, id)
+func (q *Queries) GetItem(ctx context.Context, itemID int32) (GetItemRow, error) {
+	row := q.db.QueryRowContext(ctx, getItem, itemID)
 	var i GetItemRow
 	err := row.Scan(
-		&i.ID,
-		&i.Brand,
-		&i.Model,
+		&i.ItemID,
+		&i.ItemBrand,
+		&i.ItemModel,
 		&i.CreatedAt,
 	)
 	return i, err
 }
 
+const listAnalyzers = `-- name: ListAnalyzers :many
+SELECT i.item_brand, i.item_model, i.item_serial_number, a.analyzer_state 
+FROM analyzers a JOIN items i ON a.item_id = i.item_id
+`
+
+type ListAnalyzersRow struct {
+	ItemBrand        string
+	ItemModel        string
+	ItemSerialNumber string
+	AnalyzerState    interface{}
+}
+
+func (q *Queries) ListAnalyzers(ctx context.Context) ([]ListAnalyzersRow, error) {
+	rows, err := q.db.QueryContext(ctx, listAnalyzers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListAnalyzersRow
+	for rows.Next() {
+		var i ListAnalyzersRow
+		if err := rows.Scan(
+			&i.ItemBrand,
+			&i.ItemModel,
+			&i.ItemSerialNumber,
+			&i.AnalyzerState,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const listItems = `-- name: ListItems :many
-SELECT id, brand, model, description, serial_number, created_at
+SELECT item_brand, item_model, item_description, item_serial_number, created_at
 FROM items
 `
 
-func (q *Queries) ListItems(ctx context.Context) ([]Item, error) {
+type ListItemsRow struct {
+	ItemBrand        string
+	ItemModel        string
+	ItemDescription  string
+	ItemSerialNumber string
+	CreatedAt        sql.NullTime
+}
+
+func (q *Queries) ListItems(ctx context.Context) ([]ListItemsRow, error) {
 	rows, err := q.db.QueryContext(ctx, listItems)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []Item
+	var items []ListItemsRow
 	for rows.Next() {
-		var i Item
+		var i ListItemsRow
 		if err := rows.Scan(
-			&i.ID,
-			&i.Brand,
-			&i.Model,
-			&i.Description,
-			&i.SerialNumber,
+			&i.ItemBrand,
+			&i.ItemModel,
+			&i.ItemDescription,
+			&i.ItemSerialNumber,
 			&i.CreatedAt,
 		); err != nil {
 			return nil, err
@@ -121,33 +168,33 @@ func (q *Queries) ListItems(ctx context.Context) ([]Item, error) {
 
 const updateItem = `-- name: UpdateItem :one
 UPDATE items 
-SET brand = $2, model = $3 
-WHERE id = $1
-RETURNING id, brand, model, description, created_at
+SET item_brand = $2, item_model = $3 
+WHERE item_id = $1
+RETURNING item_id, item_brand, item_model, item_description, created_at
 `
 
 type UpdateItemParams struct {
-	ID    int32
-	Brand string
-	Model string
+	ItemID    int32
+	ItemBrand string
+	ItemModel string
 }
 
 type UpdateItemRow struct {
-	ID          int32
-	Brand       string
-	Model       string
-	Description string
-	CreatedAt   sql.NullTime
+	ItemID          int32
+	ItemBrand       string
+	ItemModel       string
+	ItemDescription string
+	CreatedAt       sql.NullTime
 }
 
 func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) (UpdateItemRow, error) {
-	row := q.db.QueryRowContext(ctx, updateItem, arg.ID, arg.Brand, arg.Model)
+	row := q.db.QueryRowContext(ctx, updateItem, arg.ItemID, arg.ItemBrand, arg.ItemModel)
 	var i UpdateItemRow
 	err := row.Scan(
-		&i.ID,
-		&i.Brand,
-		&i.Model,
-		&i.Description,
+		&i.ItemID,
+		&i.ItemBrand,
+		&i.ItemModel,
+		&i.ItemDescription,
 		&i.CreatedAt,
 	)
 	return i, err

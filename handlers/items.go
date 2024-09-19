@@ -30,8 +30,8 @@ func CreateItem(queries *db.Queries) http.HandlerFunc {
 		}
 
 		// Validar que los campos NOT NULL no estén vacíos
-		if item.Brand == "" || item.Model == "" || item.SerialNumber == "" {
-			http.Error(w, "Los campos brand, model y serial_number son obligatorios", http.StatusBadRequest)
+		if item.ItemBrand == "" || item.ItemModel == "" || item.ItemSerialNumber == "" {
+			http.Error(w, "Los campos item_brand, item_model y item_serial_number son obligatorios", http.StatusBadRequest)
 			return
 		}
 
@@ -78,7 +78,7 @@ func UpdateItem(queries *db.Queries) http.HandlerFunc {
 		}
 
 		var item db.UpdateItemParams
-		item.ID = int32(id)
+		item.ItemID = int32(id)
 		if err := json.NewDecoder(r.Body).Decode(&item); err != nil {
 			http.Error(w, err.Error(), http.StatusBadRequest)
 			return

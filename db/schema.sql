@@ -10,7 +10,6 @@ CREATE TABLE items (
     item_image_url TEXT,
     item_supplier TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,  -- Registro de creación
-    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,  -- Registro de última modificación
     UNIQUE (serial_number)
 );
 
@@ -28,7 +27,7 @@ CREATE TABLE analyzers (
 CREATE TABLE parts (
     part_id SERIAL PRIMARY KEY,
     item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
-    part_state ENUM('new', 'used', 'broken', 'obsolete') NOT NULL,
+    part_state ENUM('new', 'used', 'broken', 'obsolete') NOT NULL
 );
 
 -- Tabla intermedia de muchos a muchos entre items y parts (items_parts)
@@ -46,7 +45,7 @@ CREATE TABLE cylinders (
     cylinder_size ENUM('small', 'medium', 'large') NOT NULL,
     cyliinder_unit ENUM('ppm','ppb','ppt','mg/m3','g/m3') NOT NULL,
     cylinder_concentration DECIMAL(10, 2),
-    cylinder_expiration_date DATE,
+    cylinder_expiration_date DATE
 );
 
 -- Table: stations
@@ -65,8 +64,3 @@ CREATE TABLE inventory (
     quantity INT NOT NULL CHECK (quantity >= 0),
     PRIMARY KEY (item_id, station_id)
 );
-
--- Indexes to improve performance
-CREATE INDEX idx_analyzers_pollutant ON analyzers (pollutant);
-CREATE INDEX idx_inventory_quantity ON inventory (quantity);
-CREATE INDEX idx_items_serial_number ON items (serial_number);
