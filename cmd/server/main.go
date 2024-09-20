@@ -2,7 +2,8 @@ package main
 
 import (
 	"echudev/sirca-backend/db"
-	"echudev/sirca-backend/handlers"
+	"echudev/sirca-backend/internal/database"
+	"echudev/sirca-backend/internal/handlers"
 	"log"
 	"net/http"
 
@@ -17,7 +18,7 @@ func main() {
 	}
 
 	// Connect database
-	conn, err := db.ConnectDB()
+	conn, err := database.ConnectDB()
 	if err != nil {
 		log.Fatal(err)
 	}
