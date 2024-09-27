@@ -7,7 +7,8 @@ package db
 
 import (
 	"context"
-	"database/sql"
+
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 const createItem = `-- name: CreateItem :one
@@ -28,11 +29,11 @@ type CreateItemRow struct {
 	ItemBrand       string
 	ItemModel       string
 	ItemDescription string
-	CreatedAt       sql.NullTime
+	CreatedAt       pgtype.Timestamptz
 }
 
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (CreateItemRow, error) {
-	row := q.db.QueryRowContext(ctx, createItem,
+	row := q.db.QueryRow(ctx, createItem,
 		arg.ItemBrand,
 		arg.ItemModel,
 		arg.ItemDescription,
@@ -55,7 +56,7 @@ WHERE item_id = $1
 `
 
 func (q *Queries) DeleteItem(ctx context.Context, itemID int32) error {
-	_, err := q.db.ExecContext(ctx, deleteItem, itemID)
+	_, err := q.db.Exec(ctx, deleteItem, itemID)
 	return err
 }
 
@@ -69,11 +70,11 @@ type GetItemRow struct {
 	ItemID    int32
 	ItemBrand string
 	ItemModel string
-	CreatedAt sql.NullTime
+	CreatedAt pgtype.Timestamptz
 }
 
 func (q *Queries) GetItem(ctx context.Context, itemID int32) (GetItemRow, error) {
-	row := q.db.QueryRowContext(ctx, getItem, itemID)
+	row := q.db.QueryRow(ctx, getItem, itemID)
 	var i GetItemRow
 	err := row.Scan(
 		&i.ItemID,
@@ -97,7 +98,7 @@ type ListAnalyzersRow struct {
 }
 
 func (q *Queries) ListAnalyzers(ctx context.Context) ([]ListAnalyzersRow, error) {
-	rows, err := q.db.QueryContext(ctx, listAnalyzers)
+	rows, err := q.db.Query(ctx, listAnalyzers)
 	if err != nil {
 		return nil, err
 	}
@@ -115,9 +116,6 @@ func (q *Queries) ListAnalyzers(ctx context.Context) ([]ListAnalyzersRow, error)
 		}
 		items = append(items, i)
 	}
-	if err := rows.Close(); err != nil {
-		return nil, err
-	}
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
@@ -134,11 +132,11 @@ type ListItemsRow struct {
 	ItemModel        string
 	ItemDescription  string
 	ItemSerialNumber string
-	CreatedAt        sql.NullTime
+	CreatedAt        pgtype.Timestamptz
 }
 
 func (q *Queries) ListItems(ctx context.Context) ([]ListItemsRow, error) {
-	rows, err := q.db.QueryContext(ctx, listItems)
+	rows, err := q.db.Query(ctx, listItems)
 	if err != nil {
 		return nil, err
 	}
@@ -156,9 +154,6 @@ func (q *Queries) ListItems(ctx context.Context) ([]ListItemsRow, error) {
 			return nil, err
 		}
 		items = append(items, i)
-	}
-	if err := rows.Close(); err != nil {
-		return nil, err
 	}
 	if err := rows.Err(); err != nil {
 		return nil, err
@@ -184,11 +179,11 @@ type UpdateItemRow struct {
 	ItemBrand       string
 	ItemModel       string
 	ItemDescription string
-	CreatedAt       sql.NullTime
+	CreatedAt       pgtype.Timestamptz
 }
 
 func (q *Queries) UpdateItem(ctx context.Context, arg UpdateItemParams) (UpdateItemRow, error) {
-	row := q.db.QueryRowContext(ctx, updateItem, arg.ItemID, arg.ItemBrand, arg.ItemModel)
+	row := q.db.QueryRow(ctx, updateItem, arg.ItemID, arg.ItemBrand, arg.ItemModel)
 	var i UpdateItemRow
 	err := row.Scan(
 		&i.ItemID,

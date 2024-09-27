@@ -5,26 +5,26 @@
 package db
 
 import (
-	"database/sql"
+	"github.com/jackc/pgx/v5/pgtype"
 )
 
 type Analyzer struct {
 	AnalyzerID              int32
-	ItemID                  sql.NullInt32
+	ItemID                  pgtype.Int4
 	AnalyzerState           interface{}
 	AnalyzerPollutant       interface{}
-	AnalyzerLastCalibration sql.NullTime
-	AnaluzerLastMaintenance sql.NullTime
+	AnalyzerLastCalibration pgtype.Date
+	AnaluzerLastMaintenance pgtype.Date
 }
 
 type Cylinder struct {
 	CylinderID             int32
-	ItemID                 sql.NullInt32
+	ItemID                 pgtype.Int4
 	CylinderGas            interface{}
 	CylinderSize           interface{}
 	CyliinderUnit          interface{}
-	CylinderConcentration  sql.NullString
-	CylinderExpirationDate sql.NullTime
+	CylinderConcentration  pgtype.Numeric
+	CylinderExpirationDate pgtype.Date
 }
 
 type Inventory struct {
@@ -39,9 +39,9 @@ type Item struct {
 	ItemModel        string
 	ItemDescription  string
 	ItemSerialNumber string
-	ItemImageUrl     sql.NullString
-	ItemSupplier     sql.NullString
-	CreatedAt        sql.NullTime
+	ItemImageUrl     pgtype.Text
+	ItemSupplier     pgtype.Text
+	CreatedAt        pgtype.Timestamptz
 }
 
 type ItemsPart struct {
@@ -51,14 +51,14 @@ type ItemsPart struct {
 
 type Part struct {
 	PartID    int32
-	ItemID    sql.NullInt32
+	ItemID    pgtype.Int4
 	PartState interface{}
 }
 
 type Station struct {
 	StationID          int32
 	StationName        string
-	StationImageUrl    sql.NullString
-	StationDescription sql.NullString
-	OperationalSince   sql.NullTime
+	StationImageUrl    pgtype.Text
+	StationDescription pgtype.Text
+	OperationalSince   pgtype.Date
 }

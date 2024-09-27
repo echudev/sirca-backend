@@ -1,6 +1,10 @@
-version: "1"
-packages:
-  - path: "db"
-    queries: "./db/queries.sql"
+version: "2"
+sql:
+  - engine: "postgresql"
     schema: "./db/schema.sql"
-    engine: "postgresql"
+    queries: "./db/queries.sql"
+    gen:
+      go:
+        package: "db"
+        out: "db" # Especifica explícitamente el directorio de salida
+        sql_package: "pgx/v5"
