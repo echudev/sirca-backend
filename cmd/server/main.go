@@ -1,43 +1,85 @@
 package main
 
 import (
+	"context"
 	"echudev/sirca-backend/db"
 	"echudev/sirca-backend/internal/database"
 	"echudev/sirca-backend/internal/handlers"
+	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
+	"time"
 
 	"github.com/joho/godotenv"
 )
 
 func main() {
-	// Cargar .env
-	err := godotenv.Load()
-	if err != nil {
-		log.Fatal("Error al cargar el archivo .env")
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+func run() error {
+	// Load .env file
+	if err := godotenv.Load(); err != nil {
+		return fmt.Errorf("failed to load .env file: %w", err)
 	}
 
-	// Conectar a la base de datos
+	// Connect to the database
 	conn, err := database.ConnectDB()
 	if err != nil {
-		log.Fatal(err)
+		return fmt.Errorf("failed to connect to database: %w", err)
 	}
 	defer conn.Close()
 
-	// Pasar el pool de conexiones al código generado por sqlc
+	// Create queries with the connection pool
 	queries := db.New(conn)
 
-	// Crear el mux
+	// Create and configure the server
+	srv := &http.Server{
+		Addr:         ":8080",
+		Handler:      setupRoutes(queries),
+		ReadTimeout:  15 * time.Second,
+		WriteTimeout: 15 * time.Second,
+		IdleTimeout:  60 * time.Second,
+	}
+
+	// Start the server in a goroutine
+	go func() {
+		log.Printf("Server running on http://localhost%s\n", srv.Addr)
+		if err := srv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			log.Printf("ListenAndServe error: %v\n", err)
+		}
+	}()
+
+	// Wait for interrupt signal to gracefully shutdown the server
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt)
+	<-quit
+	log.Println("Server is shutting down...")
+
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	if err := srv.Shutdown(ctx); err != nil {
+		return fmt.Errorf("server forced to shutdown: %w", err)
+	}
+
+	log.Println("Server exited properly")
+	return nil
+}
+
+func setupRoutes(queries *db.Queries) http.Handler {
 	mux := http.NewServeMux()
 
-	// Definir rutas con el verbo HTTP
+	// Define routes with HTTP verbs
 	mux.HandleFunc("GET /items", handlers.GetItems(queries))
 	mux.HandleFunc("POST /items", handlers.CreateItem(queries))
 	mux.HandleFunc("GET /items/{id}", handlers.GetItem(queries))
 	mux.HandleFunc("PUT /items/{id}", handlers.UpdateItem(queries))
 	mux.HandleFunc("DELETE /items/{id}", handlers.DeleteItem(queries))
 
-	// Iniciar el servidor
-	log.Println("Servidor corriendo en http://localhost:8080")
-	log.Fatal(http.ListenAndServe(":8080", mux))
+	return mux
 }
