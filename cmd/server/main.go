@@ -17,7 +17,7 @@ import (
 
 func main() {
 	if err := run(); err != nil {
-		log.Fatal(err)
+		log.Fatalf("Error running server: %v", err)
 	}
 }
 
@@ -55,6 +55,23 @@ func run() error {
 	}()
 
 	// Wait for interrupt signal to gracefully shutdown the server
+	return gracefulShutdown(srv)
+}
+
+func setupRoutes(queries *db.Queries) http.Handler {
+	mux := http.NewServeMux()
+
+	// Define routes with HTTP verbs
+	mux.HandleFunc("GET /items", handlers.GetItems(queries))
+	mux.HandleFunc("POST /items", handlers.CreateItem(queries))
+	mux.HandleFunc("GET /items/{id}", handlers.GetItem(queries))
+	mux.HandleFunc("PUT /items/{id}", handlers.UpdateItem(queries))
+	mux.HandleFunc("DELETE /items/{id}", handlers.DeleteItem(queries))
+
+	return mux
+}
+
+func gracefulShutdown(srv *http.Server) error {
 	quit := make(chan os.Signal, 1)
 	signal.Notify(quit, os.Interrupt)
 	<-quit
@@ -69,17 +86,4 @@ func run() error {
 
 	log.Println("Server exited properly")
 	return nil
-}
-
-func setupRoutes(queries *db.Queries) http.Handler {
-	mux := http.NewServeMux()
-
-	// Define routes with HTTP verbs
-	mux.HandleFunc("GET /items", handlers.GetItems(queries))
-	mux.HandleFunc("POST /items", handlers.CreateItem(queries))
-	mux.HandleFunc("GET /items/{id}", handlers.GetItem(queries))
-	mux.HandleFunc("PUT /items/{id}", handlers.UpdateItem(queries))
-	mux.HandleFunc("DELETE /items/{id}", handlers.DeleteItem(queries))
-
-	return mux
 }
