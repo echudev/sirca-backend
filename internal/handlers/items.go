@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"echudev/sirca-backend/db"
+	"echudev/sirca-backend/internal/db"
 	"encoding/json"
 	"net/http"
 	"strconv"

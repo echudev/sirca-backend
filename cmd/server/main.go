@@ -2,8 +2,7 @@ package main
 
 import (
 	"context"
-	"echudev/sirca-backend/db"
-	"echudev/sirca-backend/internal/database"
+	"echudev/sirca-backend/internal/db"
 	"echudev/sirca-backend/internal/handlers"
 	"fmt"
 	"log"
@@ -28,7 +27,7 @@ func run() error {
 	}
 
 	// Connect to the database
-	conn, err := database.ConnectDB()
+	conn, err := db.ConnectDB()
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
