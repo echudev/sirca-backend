@@ -5,60 +5,413 @@
 package db
 
 import (
+	"database/sql/driver"
+	"fmt"
+
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+type ConcentrationUnit string
+
+const (
+	ConcentrationUnitPpm  ConcentrationUnit = "ppm"
+	ConcentrationUnitPpb  ConcentrationUnit = "ppb"
+	ConcentrationUnitPpt  ConcentrationUnit = "ppt"
+	ConcentrationUnitMgM3 ConcentrationUnit = "mg/m3"
+	ConcentrationUnitGM3  ConcentrationUnit = "g/m3"
+)
+
+func (e *ConcentrationUnit) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ConcentrationUnit(s)
+	case string:
+		*e = ConcentrationUnit(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ConcentrationUnit: %T", src)
+	}
+	return nil
+}
+
+type NullConcentrationUnit struct {
+	ConcentrationUnit ConcentrationUnit `json:"concentration_unit"`
+	Valid             bool              `json:"valid"` // Valid is true if ConcentrationUnit is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullConcentrationUnit) Scan(value interface{}) error {
+	if value == nil {
+		ns.ConcentrationUnit, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ConcentrationUnit.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullConcentrationUnit) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ConcentrationUnit), nil
+}
+
+func (e ConcentrationUnit) Valid() bool {
+	switch e {
+	case ConcentrationUnitPpm,
+		ConcentrationUnitPpb,
+		ConcentrationUnitPpt,
+		ConcentrationUnitMgM3,
+		ConcentrationUnitGM3:
+		return true
+	}
+	return false
+}
+
+type CylinderSize string
+
+const (
+	CylinderSizeSmall  CylinderSize = "small"
+	CylinderSizeMedium CylinderSize = "medium"
+	CylinderSizeLarge  CylinderSize = "large"
+)
+
+func (e *CylinderSize) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = CylinderSize(s)
+	case string:
+		*e = CylinderSize(s)
+	default:
+		return fmt.Errorf("unsupported scan type for CylinderSize: %T", src)
+	}
+	return nil
+}
+
+type NullCylinderSize struct {
+	CylinderSize CylinderSize `json:"cylinder_size"`
+	Valid        bool         `json:"valid"` // Valid is true if CylinderSize is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullCylinderSize) Scan(value interface{}) error {
+	if value == nil {
+		ns.CylinderSize, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.CylinderSize.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullCylinderSize) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.CylinderSize), nil
+}
+
+func (e CylinderSize) Valid() bool {
+	switch e {
+	case CylinderSizeSmall,
+		CylinderSizeMedium,
+		CylinderSizeLarge:
+		return true
+	}
+	return false
+}
+
+type GasType string
+
+const (
+	GasTypeNitrogen      GasType = "nitrogen"
+	GasTypeOxygen        GasType = "oxygen"
+	GasTypeArgon         GasType = "argon"
+	GasTypeCarbondioxide GasType = "carbon dioxide"
+	GasTypeHydrogen      GasType = "hydrogen"
+	GasTypeMethane       GasType = "methane"
+	GasTypeWater         GasType = "water"
+	GasTypeOther         GasType = "other"
+)
+
+func (e *GasType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = GasType(s)
+	case string:
+		*e = GasType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for GasType: %T", src)
+	}
+	return nil
+}
+
+type NullGasType struct {
+	GasType GasType `json:"gas_type"`
+	Valid   bool    `json:"valid"` // Valid is true if GasType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullGasType) Scan(value interface{}) error {
+	if value == nil {
+		ns.GasType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.GasType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullGasType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.GasType), nil
+}
+
+func (e GasType) Valid() bool {
+	switch e {
+	case GasTypeNitrogen,
+		GasTypeOxygen,
+		GasTypeArgon,
+		GasTypeCarbondioxide,
+		GasTypeHydrogen,
+		GasTypeMethane,
+		GasTypeWater,
+		GasTypeOther:
+		return true
+	}
+	return false
+}
+
+type ItemState string
+
+const (
+	ItemStateActive      ItemState = "active"
+	ItemStateInactive    ItemState = "inactive"
+	ItemStateMaintenance ItemState = "maintenance"
+)
+
+func (e *ItemState) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = ItemState(s)
+	case string:
+		*e = ItemState(s)
+	default:
+		return fmt.Errorf("unsupported scan type for ItemState: %T", src)
+	}
+	return nil
+}
+
+type NullItemState struct {
+	ItemState ItemState `json:"item_state"`
+	Valid     bool      `json:"valid"` // Valid is true if ItemState is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullItemState) Scan(value interface{}) error {
+	if value == nil {
+		ns.ItemState, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.ItemState.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullItemState) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.ItemState), nil
+}
+
+func (e ItemState) Valid() bool {
+	switch e {
+	case ItemStateActive,
+		ItemStateInactive,
+		ItemStateMaintenance:
+		return true
+	}
+	return false
+}
+
+type PartState string
+
+const (
+	PartStateNew      PartState = "new"
+	PartStateUsed     PartState = "used"
+	PartStateBroken   PartState = "broken"
+	PartStateObsolete PartState = "obsolete"
+)
+
+func (e *PartState) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PartState(s)
+	case string:
+		*e = PartState(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PartState: %T", src)
+	}
+	return nil
+}
+
+type NullPartState struct {
+	PartState PartState `json:"part_state"`
+	Valid     bool      `json:"valid"` // Valid is true if PartState is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPartState) Scan(value interface{}) error {
+	if value == nil {
+		ns.PartState, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PartState.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPartState) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PartState), nil
+}
+
+func (e PartState) Valid() bool {
+	switch e {
+	case PartStateNew,
+		PartStateUsed,
+		PartStateBroken,
+		PartStateObsolete:
+		return true
+	}
+	return false
+}
+
+type PollutantType string
+
+const (
+	PollutantTypeParticulate     PollutantType = "particulate"
+	PollutantTypeOzone           PollutantType = "ozone"
+	PollutantTypeNitrogenoxides  PollutantType = "nitrogen oxides"
+	PollutantTypeCarbonmonoxide  PollutantType = "carbon monoxide"
+	PollutantTypeSulfurdioxide   PollutantType = "sulfur dioxide"
+	PollutantTypeHydrogensulfide PollutantType = "hydrogen sulfide"
+)
+
+func (e *PollutantType) Scan(src interface{}) error {
+	switch s := src.(type) {
+	case []byte:
+		*e = PollutantType(s)
+	case string:
+		*e = PollutantType(s)
+	default:
+		return fmt.Errorf("unsupported scan type for PollutantType: %T", src)
+	}
+	return nil
+}
+
+type NullPollutantType struct {
+	PollutantType PollutantType `json:"pollutant_type"`
+	Valid         bool          `json:"valid"` // Valid is true if PollutantType is not NULL
+}
+
+// Scan implements the Scanner interface.
+func (ns *NullPollutantType) Scan(value interface{}) error {
+	if value == nil {
+		ns.PollutantType, ns.Valid = "", false
+		return nil
+	}
+	ns.Valid = true
+	return ns.PollutantType.Scan(value)
+}
+
+// Value implements the driver Valuer interface.
+func (ns NullPollutantType) Value() (driver.Value, error) {
+	if !ns.Valid {
+		return nil, nil
+	}
+	return string(ns.PollutantType), nil
+}
+
+func (e PollutantType) Valid() bool {
+	switch e {
+	case PollutantTypeParticulate,
+		PollutantTypeOzone,
+		PollutantTypeNitrogenoxides,
+		PollutantTypeCarbonmonoxide,
+		PollutantTypeSulfurdioxide,
+		PollutantTypeHydrogensulfide:
+		return true
+	}
+	return false
+}
+
 type Analyzer struct {
-	AnalyzerID              int32
-	ItemID                  pgtype.Int4
-	AnalyzerState           interface{}
-	AnalyzerPollutant       interface{}
-	AnalyzerLastCalibration pgtype.Date
-	AnaluzerLastMaintenance pgtype.Date
+	AnalyzerID              int32         `json:"analyzer_id"`
+	ItemID                  pgtype.Int4   `json:"item_id"`
+	AnalyzerState           ItemState     `json:"analyzer_state"`
+	AnalyzerPollutant       PollutantType `json:"analyzer_pollutant"`
+	AnalyzerLastCalibration pgtype.Date   `json:"analyzer_last_calibration"`
+	AnalyzerLastMaintenance pgtype.Date   `json:"analyzer_last_maintenance"`
+}
+
+type Brand struct {
+	BrandID   int32  `json:"brand_id"`
+	BrandName string `json:"brand_name"`
 }
 
 type Cylinder struct {
-	CylinderID             int32
-	ItemID                 pgtype.Int4
-	CylinderGas            interface{}
-	CylinderSize           interface{}
-	CyliinderUnit          interface{}
-	CylinderConcentration  pgtype.Numeric
-	CylinderExpirationDate pgtype.Date
+	CylinderID             int32             `json:"cylinder_id"`
+	ItemID                 pgtype.Int4       `json:"item_id"`
+	CylinderGas            GasType           `json:"cylinder_gas"`
+	CylinderSize           CylinderSize      `json:"cylinder_size"`
+	CylinderUnit           ConcentrationUnit `json:"cylinder_unit"`
+	CylinderConcentration  pgtype.Numeric    `json:"cylinder_concentration"`
+	CylinderExpirationDate pgtype.Date       `json:"cylinder_expiration_date"`
 }
 
 type Inventory struct {
-	ItemID    int32
-	StationID int32
-	Quantity  int32
+	ItemID    int32 `json:"item_id"`
+	StationID int32 `json:"station_id"`
+	Quantity  int32 `json:"quantity"`
 }
 
 type Item struct {
-	ItemID           int32
-	ItemBrand        string
-	ItemModel        string
-	ItemDescription  string
-	ItemSerialNumber string
-	ItemImageUrl     pgtype.Text
-	ItemSupplier     pgtype.Text
-	CreatedAt        pgtype.Timestamptz
+	ItemID           int32              `json:"item_id"`
+	ModelID          pgtype.Int4        `json:"model_id"`
+	ItemDescription  string             `json:"item_description"`
+	ItemSerialNumber string             `json:"item_serial_number"`
+	ItemImageUrl     pgtype.Text        `json:"item_image_url"`
+	ItemSupplier     pgtype.Text        `json:"item_supplier"`
+	CreatedAt        pgtype.Timestamptz `json:"created_at"`
 }
 
 type ItemsPart struct {
-	ItemID int32
-	PartID int32
+	ItemID int32 `json:"item_id"`
+	PartID int32 `json:"part_id"`
+}
+
+type Model struct {
+	ModelID   int32       `json:"model_id"`
+	BrandID   pgtype.Int4 `json:"brand_id"`
+	ModelName string      `json:"model_name"`
 }
 
 type Part struct {
-	PartID    int32
-	ItemID    pgtype.Int4
-	PartState interface{}
+	PartID    int32       `json:"part_id"`
+	ItemID    pgtype.Int4 `json:"item_id"`
+	PartState PartState   `json:"part_state"`
 }
 
 type Station struct {
-	StationID          int32
-	StationName        string
-	StationImageUrl    pgtype.Text
-	StationDescription pgtype.Text
-	OperationalSince   pgtype.Date
+	StationID          int32       `json:"station_id"`
+	StationName        string      `json:"station_name"`
+	StationImageUrl    pgtype.Text `json:"station_image_url"`
+	StationDescription pgtype.Text `json:"station_description"`
+	OperationalSince   pgtype.Date `json:"operational_since"`
 }

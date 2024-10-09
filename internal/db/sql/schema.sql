@@ -1,55 +1,72 @@
-CREATE DATABASE sircadb;
+CREATE TYPE item_state AS ENUM('active', 'inactive', 'maintenance');
+CREATE TYPE pollutant_type AS ENUM('particulate', 'ozone', 'nitrogen oxides', 'carbon monoxide', 'sulfur dioxide', 'hydrogen sulfide');
+CREATE TYPE part_state AS ENUM('new', 'used', 'broken', 'obsolete');
+CREATE TYPE gas_type AS ENUM('nitrogen', 'oxygen', 'argon', 'carbon dioxide', 'hydrogen', 'methane', 'water', 'other');
+CREATE TYPE cylinder_size AS ENUM('small', 'medium', 'large');
+CREATE TYPE concentration_unit AS ENUM('ppm','ppb','ppt','mg/m3','g/m3');
 
--- Tabla base: items (superclase)
-CREATE TABLE items (
+-- Create brands table
+CREATE TABLE IF NOT EXISTS brands (
+    brand_id SERIAL PRIMARY KEY,
+    brand_name VARCHAR(40) UNIQUE NOT NULL
+);
+
+-- Create models table
+CREATE TABLE IF NOT EXISTS models (
+    model_id SERIAL PRIMARY KEY,
+    brand_id INT REFERENCES brands(brand_id),
+    model_name VARCHAR(40) NOT NULL,
+    UNIQUE (brand_id, model_name)
+);
+
+-- Create items table
+CREATE TABLE IF NOT EXISTS items (
     item_id SERIAL PRIMARY KEY,
-    item_brand VARCHAR(40) NOT NULL CHECK (char_length(brand) > 0),
-    item_model VARCHAR(40) NOT NULL CHECK (char_length(model) > 0),
+    model_id INT REFERENCES models(model_id),
     item_description TEXT NOT NULL,
-    item_serial_number VARCHAR(255) NOT NULL CHECK (char_length(serial_number) > 0),
+    item_serial_number VARCHAR(255) NOT NULL UNIQUE,
     item_image_url TEXT,
     item_supplier TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,  -- Registro de creación
-    UNIQUE (serial_number)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
--- Tabla: analyzers (hereda de items)
-CREATE TABLE analyzers (
+-- Create analyzers table
+CREATE TABLE IF NOT EXISTS analyzers (
     analyzer_id SERIAL PRIMARY KEY,
     item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
-    analyzer_state ENUM('active', 'inactive', 'maintenance') NOT NULL,
-    analyzer_pollutant ENUM('particulate', 'ozone', 'nitrogen', 'carbon monoxide', 'sulfur dioxide', 'hydrogen sulfide') NOT NULL,
+    analyzer_state item_state NOT NULL,
+    analyzer_pollutant pollutant_type NOT NULL,
     analyzer_last_calibration DATE,
-    analuzer_last_maintenance DATE
+    analyzer_last_maintenance DATE
 );
 
--- Tabla: parts (hereda de items)
-CREATE TABLE parts (
+-- Create parts table
+CREATE TABLE IF NOT EXISTS parts (
     part_id SERIAL PRIMARY KEY,
     item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
-    part_state ENUM('new', 'used', 'broken', 'obsolete') NOT NULL
+    part_state part_state NOT NULL
 );
 
--- Tabla intermedia de muchos a muchos entre items y parts (items_parts)
-CREATE TABLE items_parts (
-    item_id INT REFERENCES items(item_id) ON DELETE CASCADE,  -- El ítem al que pertenece la parte
-    part_id INT REFERENCES parts(part_id) ON DELETE CASCADE,  -- La parte que pertenece al ítem
+-- Create items_parts table
+CREATE TABLE IF NOT EXISTS items_parts (
+    item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
+    part_id INT REFERENCES parts(part_id) ON DELETE CASCADE,
     PRIMARY KEY (item_id, part_id)
 );
 
--- Table: cylinders
-CREATE TABLE cylinders (
+-- Create cylinders table
+CREATE TABLE IF NOT EXISTS cylinders (
     cylinder_id SERIAL PRIMARY KEY,
     item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
-    cylinder_gas ENUM('nitrogen', 'oxygen', 'argon', 'carbon dioxide', 'hydrogen', 'methane', 'water', 'other') NOT NULL,
-    cylinder_size ENUM('small', 'medium', 'large') NOT NULL,
-    cyliinder_unit ENUM('ppm','ppb','ppt','mg/m3','g/m3') NOT NULL,
+    cylinder_gas gas_type NOT NULL,
+    cylinder_size cylinder_size NOT NULL,
+    cylinder_unit concentration_unit NOT NULL,
     cylinder_concentration DECIMAL(10, 2),
     cylinder_expiration_date DATE
 );
 
--- Table: stations
-CREATE TABLE stations (
+-- Create stations table
+CREATE TABLE IF NOT EXISTS stations (
     station_id SERIAL PRIMARY KEY,
     station_name VARCHAR(255) NOT NULL,
     station_image_url TEXT,
@@ -57,8 +74,8 @@ CREATE TABLE stations (
     operational_since DATE
 );
 
--- Table: inventory
-CREATE TABLE inventory (
+-- Create inventory table
+CREATE TABLE IF NOT EXISTS inventory (
     item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
     station_id INT REFERENCES stations(station_id) ON DELETE CASCADE,
     quantity INT NOT NULL CHECK (quantity >= 0),

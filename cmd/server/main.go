@@ -62,11 +62,6 @@ func setupRoutes(queries *db.Queries) http.Handler {
 
 	// Define routes with HTTP verbs
 	mux.HandleFunc("GET /items", handlers.GetItems(queries))
-	mux.HandleFunc("POST /items", handlers.CreateItem(queries))
-	mux.HandleFunc("GET /items/{id}", handlers.GetItem(queries))
-	mux.HandleFunc("PUT /items/{id}", handlers.UpdateItem(queries))
-	mux.HandleFunc("DELETE /items/{id}", handlers.DeleteItem(queries))
-
 	return mux
 }
 
