@@ -4,23 +4,35 @@
 
 -- Create ENUM types
 CREATE TYPE item_state AS ENUM('active', 'inactive', 'maintenance');
-CREATE TYPE pollutant_type AS ENUM('particulate', 'ozone', 'nitrogen', 'carbon monoxide', 'sulfur dioxide', 'hydrogen sulfide');
+CREATE TYPE pollutant_type AS ENUM('particulate', 'ozone', 'nitrogen oxides', 'carbon monoxide', 'sulfur dioxide', 'hydrogen sulfide');
 CREATE TYPE part_state AS ENUM('new', 'used', 'broken', 'obsolete');
 CREATE TYPE gas_type AS ENUM('nitrogen', 'oxygen', 'argon', 'carbon dioxide', 'hydrogen', 'methane', 'water', 'other');
 CREATE TYPE cylinder_size AS ENUM('small', 'medium', 'large');
 CREATE TYPE concentration_unit AS ENUM('ppm','ppb','ppt','mg/m3','g/m3');
 
+-- Create brands table
+CREATE TABLE IF NOT EXISTS brands (
+    brand_id SERIAL PRIMARY KEY,
+    brand_name VARCHAR(40) UNIQUE NOT NULL
+);
+
+-- Create models table
+CREATE TABLE IF NOT EXISTS models (
+    model_id SERIAL PRIMARY KEY,
+    brand_id INT REFERENCES brands(brand_id),
+    model_name VARCHAR(40) NOT NULL,
+    UNIQUE (brand_id, model_name)
+);
+
 -- Create items table
 CREATE TABLE IF NOT EXISTS items (
     item_id SERIAL PRIMARY KEY,
-    item_brand VARCHAR(40) NOT NULL CHECK (char_length(item_brand) > 0),
-    item_model VARCHAR(40) NOT NULL CHECK (char_length(item_model) > 0),
+    model_id INT REFERENCES models(model_id),
     item_description TEXT NOT NULL,
-    item_serial_number VARCHAR(255) NOT NULL CHECK (char_length(item_serial_number) > 0),
+    item_serial_number VARCHAR(255) NOT NULL UNIQUE,
     item_image_url TEXT,
     item_supplier TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-    UNIQUE (item_serial_number)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Create analyzers table
