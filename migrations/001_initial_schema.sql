@@ -1,91 +1,158 @@
 -- +goose Up
--- Create the database (Note: Goose typically doesn't handle database creation)
--- You might need to create the database manually or use a separate script
 
--- Create ENUM types
-CREATE TYPE item_state AS ENUM('active', 'inactive', 'maintenance');
-CREATE TYPE pollutant_type AS ENUM('particulate', 'ozone', 'nitrogen oxides', 'carbon monoxide', 'sulfur dioxide', 'hydrogen sulfide');
-CREATE TYPE part_state AS ENUM('new', 'used', 'broken', 'obsolete');
-CREATE TYPE gas_type AS ENUM('nitrogen', 'oxygen', 'argon', 'carbon dioxide', 'hydrogen', 'methane', 'water', 'other');
-CREATE TYPE cylinder_size AS ENUM('small', 'medium', 'large');
-CREATE TYPE concentration_unit AS ENUM('ppm','ppb','ppt','mg/m3','g/m3');
+-- Crear tabla de referencia para item_state
+CREATE TABLE IF NOT EXISTS item_states (
+    item_state_id SERIAL PRIMARY KEY,
+    state_name VARCHAR(20) NOT NULL UNIQUE
+);
 
--- Create brands table
+-- Insertar valores iniciales en item_states
+INSERT INTO item_states (state_name) VALUES ('active'), ('inactive'), ('maintenance');
+
+-- Crear tabla de referencia para pollutant_type
+CREATE TABLE IF NOT EXISTS pollutants (
+    pollutant_id SERIAL PRIMARY KEY,
+    pollutant_name VARCHAR(40) NOT NULL UNIQUE
+);
+
+-- Insertar valores iniciales en pollutants
+INSERT INTO pollutants (pollutant_name) VALUES ('particulate', 'ozone', 'nitrogen oxides', 'carbon monoxide', 'sulfur dioxide', 'hydrogen sulfide');
+
+-- Crear tabla de referencia para part_state
+CREATE TABLE IF NOT EXISTS part_states (
+    part_state_id SERIAL PRIMARY KEY,
+    part_state_name VARCHAR(20) NOT NULL UNIQUE
+);
+
+-- Insertar valores iniciales en part_states
+INSERT INTO part_states (part_state_name) VALUES ('new', 'used', 'broken', 'obsolete');
+
+-- Crear tabla de referencia para gas_type
+CREATE TABLE IF NOT EXISTS gas_types (
+    gas_type_id SERIAL PRIMARY KEY,
+    gas_type_name VARCHAR(40) NOT NULL UNIQUE
+);
+
+-- Insertar valores iniciales en gas_types
+INSERT INTO gas_types (gas_type_name) VALUES ('nitrogen', 'oxygen', 'argon', 'carbon dioxide', 'hydrogen', 'methane', 'water', 'other');
+
+-- Crear tabla de referencia para cylinder_size
+CREATE TABLE IF NOT EXISTS cylinder_sizes (
+    cylinder_size_id SERIAL PRIMARY KEY,
+    size_name VARCHAR(20) NOT NULL UNIQUE
+);
+
+-- Insertar valores iniciales en cylinder_sizes
+INSERT INTO cylinder_sizes (size_name) VALUES ('small', 'medium', 'large');
+
+-- Crear tabla de referencia para concentration_unit
+CREATE TABLE IF NOT EXISTS concentration_units (
+    concentration_unit_id SERIAL PRIMARY KEY,
+    unit_name VARCHAR(10) NOT NULL UNIQUE
+);
+
+-- Insertar valores iniciales en concentration_units
+INSERT INTO concentration_units (unit_name) VALUES ('ppm', 'ppb', 'ppt', 'mg/m3', 'g/m3');
+
+-- Crear brands table
 CREATE TABLE IF NOT EXISTS brands (
     brand_id SERIAL PRIMARY KEY,
     brand_name VARCHAR(40) UNIQUE NOT NULL
 );
 
--- Create models table
+-- Crear models table
 CREATE TABLE IF NOT EXISTS models (
     model_id SERIAL PRIMARY KEY,
-    brand_id INT REFERENCES brands(brand_id),
+    brand_id INT NOT NULL,
     model_name VARCHAR(40) NOT NULL,
-    UNIQUE (brand_id, model_name)
+    UNIQUE (brand_id, model_name),
+    FOREIGN KEY (brand_id) REFERENCES brands(brand_id) ON DELETE CASCADE
 );
 
--- Create items table
+-- Crear items table
 CREATE TABLE IF NOT EXISTS items (
     item_id SERIAL PRIMARY KEY,
-    model_id INT REFERENCES models(model_id),
+    model_id INT NOT NULL,
     item_description TEXT NOT NULL,
-    item_serial_number VARCHAR(255) NOT NULL UNIQUE,
+    item_serial_number VARCHAR(100) NOT NULL UNIQUE, -- Restricción ajustada
     item_image_url TEXT,
     item_supplier TEXT,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (model_id) REFERENCES models(model_id) ON DELETE CASCADE
 );
 
--- Create analyzers table
+-- Crear analyzers table
 CREATE TABLE IF NOT EXISTS analyzers (
     analyzer_id SERIAL PRIMARY KEY,
-    item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
-    analyzer_state item_state NOT NULL,
-    analyzer_pollutant pollutant_type NOT NULL,
-    analyzer_last_calibration DATE,
-    analyzer_last_maintenance DATE
+    item_id INT NOT NULL,
+    analyzer_state_id INT NOT NULL, -- Llave foránea a item_states
+    analyzer_pollutant_id INT NOT NULL, -- Llave foránea a pollutants
+    analyzer_last_calibration DATE CHECK (analyzer_last_calibration <= CURRENT_DATE), -- Asegurar fechas pasadas
+    analyzer_last_maintenance DATE CHECK (analyzer_last_maintenance <= CURRENT_DATE),
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
+    FOREIGN KEY (analyzer_state_id) REFERENCES item_states(item_state_id),
+    FOREIGN KEY (analyzer_pollutant_id) REFERENCES pollutants(pollutant_id)
 );
 
--- Create parts table
+-- Crear parts table
 CREATE TABLE IF NOT EXISTS parts (
     part_id SERIAL PRIMARY KEY,
-    item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
-    part_state part_state NOT NULL
+    item_id INT NOT NULL,
+    part_state_id INT NOT NULL, -- Llave foránea a part_states
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
+    FOREIGN KEY (part_state_id) REFERENCES part_states(part_state_id)
 );
 
--- Create items_parts table
+-- Crear items_parts table
 CREATE TABLE IF NOT EXISTS items_parts (
-    item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
-    part_id INT REFERENCES parts(part_id) ON DELETE CASCADE,
-    PRIMARY KEY (item_id, part_id)
+    item_id INT NOT NULL,
+    part_id INT NOT NULL,
+    PRIMARY KEY (item_id, part_id),
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
+    FOREIGN KEY (part_id) REFERENCES parts(part_id) ON DELETE CASCADE
 );
 
--- Create cylinders table
+-- Crear cylinders table
 CREATE TABLE IF NOT EXISTS cylinders (
     cylinder_id SERIAL PRIMARY KEY,
-    item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
-    cylinder_gas gas_type NOT NULL,
-    cylinder_size cylinder_size NOT NULL,
-    cylinder_unit concentration_unit NOT NULL,
-    cylinder_concentration DECIMAL(10, 2),
-    cylinder_expiration_date DATE
+    item_id INT NOT NULL,
+    cylinder_gas_type_id INT NOT NULL, -- Llave foránea a gas_types
+    cylinder_size_id INT NOT NULL, -- Llave foránea a cylinder_sizes
+    cylinder_unit_id INT NOT NULL, -- Llave foránea a concentration_units
+    cylinder_concentration DECIMAL(10, 2) CHECK (cylinder_concentration > 0), -- Asegurar concentraciones válidas
+    cylinder_expiration_date DATE CHECK (cylinder_expiration_date >= CURRENT_DATE), -- Asegurar fechas futuras
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
+    FOREIGN KEY (cylinder_gas_type_id) REFERENCES gas_types(gas_type_id),
+    FOREIGN KEY (cylinder_size_id) REFERENCES cylinder_sizes(cylinder_size_id),
+    FOREIGN KEY (cylinder_unit_id) REFERENCES concentration_units(concentration_unit_id)
 );
 
--- Create stations table
+-- Crear stations table
 CREATE TABLE IF NOT EXISTS stations (
     station_id SERIAL PRIMARY KEY,
-    station_name VARCHAR(255) NOT NULL,
+    station_name VARCHAR(100) NOT NULL, -- Tamaño restringido a lo necesario
     station_image_url TEXT,
     station_description TEXT,
-    operational_since DATE
+    operational_since DATE CHECK (operational_since <= CURRENT_DATE) -- Asegurar que sea una fecha pasada
 );
 
--- Create inventory table
+-- Crear inventory table
 CREATE TABLE IF NOT EXISTS inventory (
-    item_id INT REFERENCES items(item_id) ON DELETE CASCADE,
-    station_id INT REFERENCES stations(station_id) ON DELETE CASCADE,
+    item_id INT NOT NULL,
+    station_id INT NOT NULL,
     quantity INT NOT NULL CHECK (quantity >= 0),
-    PRIMARY KEY (item_id, station_id)
+    PRIMARY KEY (item_id, station_id),
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
+    FOREIGN KEY (station_id) REFERENCES stations(station_id) ON DELETE CASCADE
 );
+
+-- Crear índices adicionales para mejorar el rendimiento de consultas comunes
+CREATE INDEX idx_models_brand_id ON models(brand_id);
+CREATE INDEX idx_items_model_id ON items(model_id);
+CREATE INDEX idx_analyzers_item_id ON analyzers(item_id);
+CREATE INDEX idx_parts_item_id ON parts(item_id);
+CREATE INDEX idx_inventory_item_id ON inventory(item_id);
+CREATE INDEX idx_inventory_station_id ON inventory(station_id);
 
 -- +goose Down
 -- Drop tables
@@ -96,13 +163,11 @@ DROP TABLE IF EXISTS items_parts;
 DROP TABLE IF EXISTS parts;
 DROP TABLE IF EXISTS analyzers;
 DROP TABLE IF EXISTS items;
-
--- Drop ENUM types
-DROP TYPE IF EXISTS concentration_unit;
-DROP TYPE IF EXISTS cylinder_size;
-DROP TYPE IF EXISTS gas_type;
-DROP TYPE IF EXISTS part_state;
-DROP TYPE IF EXISTS pollutant_type;
-DROP TYPE IF EXISTS item_state;
-
--- Note: Dropping the database should be done manually if needed
+DROP TABLE IF EXISTS models;
+DROP TABLE IF EXISTS brands;
+DROP TABLE IF EXISTS item_states;
+DROP TABLE IF EXISTS pollutants;
+DROP TABLE IF EXISTS part_states;
+DROP TABLE IF EXISTS gas_types;
+DROP TABLE IF EXISTS cylinder_sizes;
+DROP TABLE IF EXISTS concentration_units;
