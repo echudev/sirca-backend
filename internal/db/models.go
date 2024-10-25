@@ -48,9 +48,11 @@ type GasType struct {
 }
 
 type Inventory struct {
-	ItemID    int32 `json:"item_id"`
-	StationID int32 `json:"station_id"`
-	Quantity  int32 `json:"quantity"`
+	ItemID     int32              `json:"item_id"`
+	StationID  int32              `json:"station_id"`
+	Quantity   int32              `json:"quantity"`
+	LastUpdate pgtype.Timestamptz `json:"last_update"`
+	UpdatedBy  string             `json:"updated_by"`
 }
 
 type Item struct {
@@ -96,9 +98,21 @@ type Pollutant struct {
 }
 
 type Station struct {
-	StationID          int32       `json:"station_id"`
-	StationName        string      `json:"station_name"`
-	StationImageUrl    pgtype.Text `json:"station_image_url"`
-	StationDescription pgtype.Text `json:"station_description"`
-	OperationalSince   pgtype.Date `json:"operational_since"`
+	StationID          int32          `json:"station_id"`
+	StationName        string         `json:"station_name"`
+	StationImageUrl    pgtype.Text    `json:"station_image_url"`
+	StationLatitude    pgtype.Numeric `json:"station_latitude"`
+	StationLongitude   pgtype.Numeric `json:"station_longitude"`
+	StationAddress     pgtype.Text    `json:"station_address"`
+	StationDescription pgtype.Text    `json:"station_description"`
+	OperationalSince   pgtype.Date    `json:"operational_since"`
+}
+
+type Traslado struct {
+	TrasladoID       int32              `json:"traslado_id"`
+	ItemID           int32              `json:"item_id"`
+	StationIDOrigen  int32              `json:"station_id_origen"`
+	StationIDDestino int32              `json:"station_id_destino"`
+	Cantidad         int32              `json:"cantidad"`
+	FechaTraslado    pgtype.Timestamptz `json:"fecha_traslado"`
 }
