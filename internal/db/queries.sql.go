@@ -18,7 +18,7 @@ FROM items
 
 type GetItemsRow struct {
 	ItemID           int32              `json:"item_id"`
-	ModelID          pgtype.Int4        `json:"model_id"`
+	ModelID          int32              `json:"model_id"`
 	ItemDescription  string             `json:"item_description"`
 	ItemSerialNumber string             `json:"item_serial_number"`
 	CreatedAt        pgtype.Timestamptz `json:"created_at"`
