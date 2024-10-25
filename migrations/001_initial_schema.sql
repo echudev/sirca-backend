@@ -6,8 +6,6 @@ CREATE TABLE IF NOT EXISTS item_states (
     state_name VARCHAR(20) NOT NULL UNIQUE
 );
 
--- Insertar valores iniciales en item_states
-INSERT INTO item_states (state_name) VALUES ('active'), ('inactive'), ('maintenance');
 
 -- Crear tabla de referencia para pollutant_type
 CREATE TABLE IF NOT EXISTS pollutants (
@@ -15,8 +13,6 @@ CREATE TABLE IF NOT EXISTS pollutants (
     pollutant_name VARCHAR(40) NOT NULL UNIQUE
 );
 
--- Insertar valores iniciales en pollutants
-INSERT INTO pollutants (pollutant_name) VALUES ('particulate', 'ozone', 'nitrogen oxides', 'carbon monoxide', 'sulfur dioxide', 'hydrogen sulfide');
 
 -- Crear tabla de referencia para part_state
 CREATE TABLE IF NOT EXISTS part_states (
@@ -24,8 +20,6 @@ CREATE TABLE IF NOT EXISTS part_states (
     part_state_name VARCHAR(20) NOT NULL UNIQUE
 );
 
--- Insertar valores iniciales en part_states
-INSERT INTO part_states (part_state_name) VALUES ('new', 'used', 'broken', 'obsolete');
 
 -- Crear tabla de referencia para gas_type
 CREATE TABLE IF NOT EXISTS gas_types (
@@ -33,8 +27,6 @@ CREATE TABLE IF NOT EXISTS gas_types (
     gas_type_name VARCHAR(40) NOT NULL UNIQUE
 );
 
--- Insertar valores iniciales en gas_types
-INSERT INTO gas_types (gas_type_name) VALUES ('nitrogen', 'oxygen', 'argon', 'carbon dioxide', 'hydrogen', 'methane', 'water', 'other');
 
 -- Crear tabla de referencia para cylinder_size
 CREATE TABLE IF NOT EXISTS cylinder_sizes (
@@ -42,8 +34,6 @@ CREATE TABLE IF NOT EXISTS cylinder_sizes (
     size_name VARCHAR(20) NOT NULL UNIQUE
 );
 
--- Insertar valores iniciales en cylinder_sizes
-INSERT INTO cylinder_sizes (size_name) VALUES ('small', 'medium', 'large');
 
 -- Crear tabla de referencia para concentration_unit
 CREATE TABLE IF NOT EXISTS concentration_units (
@@ -51,8 +41,6 @@ CREATE TABLE IF NOT EXISTS concentration_units (
     unit_name VARCHAR(10) NOT NULL UNIQUE
 );
 
--- Insertar valores iniciales en concentration_units
-INSERT INTO concentration_units (unit_name) VALUES ('ppm', 'ppb', 'ppt', 'mg/m3', 'g/m3');
 
 -- Crear brands table
 CREATE TABLE IF NOT EXISTS brands (
@@ -146,6 +134,20 @@ CREATE TABLE IF NOT EXISTS inventory (
     FOREIGN KEY (station_id) REFERENCES stations(station_id) ON DELETE CASCADE
 );
 
+-- Crear tabla traslados para registrar el movimiento de items entre estaciones
+CREATE TABLE IF NOT EXISTS traslados (
+    traslado_id SERIAL PRIMARY KEY,
+    item_id INT NOT NULL,
+    station_id_origen INT NOT NULL,
+    station_id_destino INT NOT NULL,
+    cantidad INT NOT NULL CHECK (cantidad > 0),
+    fecha_traslado TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
+    FOREIGN KEY (station_id_origen) REFERENCES stations(station_id) ON DELETE CASCADE,
+    FOREIGN KEY (station_id_destino) REFERENCES stations(station_id) ON DELETE CASCADE,
+    CHECK (station_id_origen <> station_id_destino)
+);
+
 -- Crear índices adicionales para mejorar el rendimiento de consultas comunes
 CREATE INDEX idx_models_brand_id ON models(brand_id);
 CREATE INDEX idx_items_model_id ON items(model_id);
@@ -153,6 +155,7 @@ CREATE INDEX idx_analyzers_item_id ON analyzers(item_id);
 CREATE INDEX idx_parts_item_id ON parts(item_id);
 CREATE INDEX idx_inventory_item_id ON inventory(item_id);
 CREATE INDEX idx_inventory_station_id ON inventory(station_id);
+CREATE INDEX idx_traslados_item_station ON traslados(item_id, station_id_origen, station_id_destino);
 
 -- +goose Down
 -- Drop tables
@@ -171,3 +174,4 @@ DROP TABLE IF EXISTS part_states;
 DROP TABLE IF EXISTS gas_types;
 DROP TABLE IF EXISTS cylinder_sizes;
 DROP TABLE IF EXISTS concentration_units;
+DROP TABLE IF EXISTS traslados;
