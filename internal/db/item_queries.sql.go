@@ -49,3 +49,46 @@ func (q *Queries) GetItems(ctx context.Context) ([]GetItemsRow, error) {
 	}
 	return items, nil
 }
+
+const getStations = `-- name: GetStations :many
+SELECT station_id, station_name, station_image_url, operational_since, station_latitude, station_longitude, station_address
+FROM stations
+`
+
+type GetStationsRow struct {
+	StationID        int32          `json:"station_id"`
+	StationName      string         `json:"station_name"`
+	StationImageUrl  pgtype.Text    `json:"station_image_url"`
+	OperationalSince pgtype.Date    `json:"operational_since"`
+	StationLatitude  pgtype.Numeric `json:"station_latitude"`
+	StationLongitude pgtype.Numeric `json:"station_longitude"`
+	StationAddress   pgtype.Text    `json:"station_address"`
+}
+
+func (q *Queries) GetStations(ctx context.Context) ([]GetStationsRow, error) {
+	rows, err := q.db.Query(ctx, getStations)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []GetStationsRow
+	for rows.Next() {
+		var i GetStationsRow
+		if err := rows.Scan(
+			&i.StationID,
+			&i.StationName,
+			&i.StationImageUrl,
+			&i.OperationalSince,
+			&i.StationLatitude,
+			&i.StationLongitude,
+			&i.StationAddress,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
