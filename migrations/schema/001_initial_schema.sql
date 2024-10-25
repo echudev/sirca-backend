@@ -120,6 +120,9 @@ CREATE TABLE IF NOT EXISTS stations (
     station_id SERIAL PRIMARY KEY,
     station_name VARCHAR(100) NOT NULL, -- Tamaño restringido a lo necesario
     station_image_url TEXT,
+    station_latitude DECIMAL(9,6),
+    station_longitude DECIMAL(9,6),
+    station_address TEXT,
     station_description TEXT,
     operational_since DATE CHECK (operational_since <= CURRENT_DATE) -- Asegurar que sea una fecha pasada
 );
@@ -128,7 +131,9 @@ CREATE TABLE IF NOT EXISTS stations (
 CREATE TABLE IF NOT EXISTS inventory (
     item_id INT NOT NULL,
     station_id INT NOT NULL,
-    quantity INT NOT NULL CHECK (quantity >= 0),
+    quantity INT NOT NULL CHECK (quantity >= 0), -- Asegurar que sea positivo
+    last_update TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(40) NOT NULL,
     PRIMARY KEY (item_id, station_id),
     FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
     FOREIGN KEY (station_id) REFERENCES stations(station_id) ON DELETE CASCADE
@@ -149,25 +154,21 @@ CREATE TABLE IF NOT EXISTS traslados (
 );
 
 -- Crear índices adicionales para mejorar el rendimiento de consultas comunes
-CREATE INDEX idx_models_brand_id ON models(brand_id);
-CREATE INDEX idx_items_model_id ON items(model_id);
-CREATE INDEX idx_analyzers_item_id ON analyzers(item_id);
-CREATE INDEX idx_parts_item_id ON parts(item_id);
-CREATE INDEX idx_inventory_item_id ON inventory(item_id);
-CREATE INDEX idx_inventory_station_id ON inventory(station_id);
-CREATE INDEX idx_traslados_item_station ON traslados(item_id, station_id_origen, station_id_destino);
+CREATE INDEX IF NOT EXISTS idx_models_brand_id ON models(brand_id);
+CREATE INDEX IF NOT EXISTS idx_items_model_id ON items(model_id);
+CREATE INDEX IF NOT EXISTS idx_analyzers_item_id ON analyzers(item_id);
+CREATE INDEX IF NOT EXISTS idx_parts_item_id ON parts(item_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_item_id ON inventory(item_id);
+CREATE INDEX IF NOT EXISTS idx_inventory_station_id ON inventory(station_id);
+CREATE INDEX IF NOT EXISTS idx_traslados_item_station ON traslados(item_id, station_id_origen, station_id_destino);
 
 -- +goose Down
 -- Drop tables
 DROP TABLE IF EXISTS inventory;
-DROP TABLE IF EXISTS stations;
 DROP TABLE IF EXISTS cylinders;
 DROP TABLE IF EXISTS items_parts;
 DROP TABLE IF EXISTS parts;
 DROP TABLE IF EXISTS analyzers;
-DROP TABLE IF EXISTS items;
-DROP TABLE IF EXISTS models;
-DROP TABLE IF EXISTS brands;
 DROP TABLE IF EXISTS item_states;
 DROP TABLE IF EXISTS pollutants;
 DROP TABLE IF EXISTS part_states;
@@ -175,3 +176,7 @@ DROP TABLE IF EXISTS gas_types;
 DROP TABLE IF EXISTS cylinder_sizes;
 DROP TABLE IF EXISTS concentration_units;
 DROP TABLE IF EXISTS traslados;
+DROP TABLE IF EXISTS items;
+DROP TABLE IF EXISTS models;
+DROP TABLE IF EXISTS stations;
+DROP TABLE IF EXISTS brands;
