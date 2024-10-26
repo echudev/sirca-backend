@@ -11,10 +11,17 @@ import (
 type Analyzer struct {
 	AnalyzerID              int32       `json:"analyzer_id"`
 	ItemID                  int32       `json:"item_id"`
+	BrandID                 int32       `json:"brand_id"`
+	ModelID                 int32       `json:"model_id"`
 	AnalyzerStateID         int32       `json:"analyzer_state_id"`
 	AnalyzerPollutantID     int32       `json:"analyzer_pollutant_id"`
 	AnalyzerLastCalibration pgtype.Date `json:"analyzer_last_calibration"`
 	AnalyzerLastMaintenance pgtype.Date `json:"analyzer_last_maintenance"`
+}
+
+type AnalyzerState struct {
+	AnalyzerStateID int32  `json:"analyzer_state_id"`
+	StateName       string `json:"state_name"`
 }
 
 type Brand struct {
@@ -22,29 +29,13 @@ type Brand struct {
 	BrandName string `json:"brand_name"`
 }
 
-type ConcentrationUnit struct {
-	ConcentrationUnitID int32  `json:"concentration_unit_id"`
-	UnitName            string `json:"unit_name"`
-}
-
 type Cylinder struct {
 	CylinderID             int32          `json:"cylinder_id"`
 	ItemID                 int32          `json:"item_id"`
-	CylinderGasTypeID      int32          `json:"cylinder_gas_type_id"`
-	CylinderSizeID         int32          `json:"cylinder_size_id"`
-	CylinderUnitID         int32          `json:"cylinder_unit_id"`
 	CylinderConcentration  pgtype.Numeric `json:"cylinder_concentration"`
+	CylinderConnector      int32          `json:"cylinder_connector"`
 	CylinderExpirationDate pgtype.Date    `json:"cylinder_expiration_date"`
-}
-
-type CylinderSize struct {
-	CylinderSizeID int32  `json:"cylinder_size_id"`
-	SizeName       string `json:"size_name"`
-}
-
-type GasType struct {
-	GasTypeID   int32  `json:"gas_type_id"`
-	GasTypeName string `json:"gas_type_name"`
+	CylinderCertificate    pgtype.Text    `json:"cylinder_certificate"`
 }
 
 type Inventory struct {
@@ -56,18 +47,16 @@ type Inventory struct {
 }
 
 type Item struct {
-	ItemID           int32              `json:"item_id"`
-	ModelID          int32              `json:"model_id"`
-	ItemDescription  string             `json:"item_description"`
-	ItemSerialNumber string             `json:"item_serial_number"`
-	ItemImageUrl     pgtype.Text        `json:"item_image_url"`
-	ItemSupplier     pgtype.Text        `json:"item_supplier"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	ItemID          int32              `json:"item_id"`
+	ItemTypeID      int32              `json:"item_type_id"`
+	ItemName        string             `json:"item_name"`
+	ItemDescription pgtype.Text        `json:"item_description"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
 }
 
-type ItemState struct {
-	ItemStateID int32  `json:"item_state_id"`
-	StateName   string `json:"state_name"`
+type ItemType struct {
+	ItemTypeID int32  `json:"item_type_id"`
+	TypeName   string `json:"type_name"`
 }
 
 type ItemsPart struct {
@@ -90,11 +79,6 @@ type Part struct {
 type PartState struct {
 	PartStateID   int32  `json:"part_state_id"`
 	PartStateName string `json:"part_state_name"`
-}
-
-type Pollutant struct {
-	PollutantID   int32  `json:"pollutant_id"`
-	PollutantName string `json:"pollutant_name"`
 }
 
 type Station struct {

@@ -12,16 +12,24 @@ import (
 )
 
 const getItems = `-- name: GetItems :many
-SELECT item_id, model_id, item_description, item_serial_number, created_at
-FROM items
+SELECT
+    i.item_id,
+    i.item_name,
+    i.item_description,
+    i.created_at,
+    it.type_name AS item_type
+FROM
+    items i
+JOIN
+    item_types it ON i.item_type_id = it.item_type_id
 `
 
 type GetItemsRow struct {
-	ItemID           int32              `json:"item_id"`
-	ModelID          int32              `json:"model_id"`
-	ItemDescription  string             `json:"item_description"`
-	ItemSerialNumber string             `json:"item_serial_number"`
-	CreatedAt        pgtype.Timestamptz `json:"created_at"`
+	ItemID          int32              `json:"item_id"`
+	ItemName        string             `json:"item_name"`
+	ItemDescription pgtype.Text        `json:"item_description"`
+	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	ItemType        string             `json:"item_type"`
 }
 
 func (q *Queries) GetItems(ctx context.Context) ([]GetItemsRow, error) {
@@ -35,10 +43,10 @@ func (q *Queries) GetItems(ctx context.Context) ([]GetItemsRow, error) {
 		var i GetItemsRow
 		if err := rows.Scan(
 			&i.ItemID,
-			&i.ModelID,
+			&i.ItemName,
 			&i.ItemDescription,
-			&i.ItemSerialNumber,
 			&i.CreatedAt,
+			&i.ItemType,
 		); err != nil {
 			return nil, err
 		}
@@ -91,4 +99,27 @@ func (q *Queries) GetStations(ctx context.Context) ([]GetStationsRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const saveItem = `-- name: SaveItem :one
+WITH type_lookup AS (
+    SELECT item_type_id FROM item_types WHERE type_name = $$type_name$$
+)
+INSERT INTO items (
+    item_type_id,
+    item_name,
+    item_description
+)
+VALUES (
+    (SELECT item_type_id FROM type_lookup),
+    $$item_name$$,
+    $$item_description$$
+) RETURNING item_id
+`
+
+func (q *Queries) SaveItem(ctx context.Context) (int32, error) {
+	row := q.db.QueryRow(ctx, saveItem)
+	var item_id int32
+	err := row.Scan(&item_id)
+	return item_id, err
 }
