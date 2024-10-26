@@ -22,18 +22,23 @@ CREATE TABLE IF NOT EXISTS part_states (
 
 
 -- Crear tabla de referencia para gas_type
-CREATE TABLE IF NOT EXISTS gas_types (
-    gas_type_id SERIAL PRIMARY KEY,
-    gas_type_name VARCHAR(40) NOT NULL UNIQUE
+CREATE TABLE IF NOT EXISTS cylinder_gas (
+    cylinder_gas_id SERIAL PRIMARY KEY,
+    cylinder_gas_name VARCHAR(10) NOT NULL UNIQUE
 );
 
 
 -- Crear tabla de referencia para cylinder_size
-CREATE TABLE IF NOT EXISTS cylinder_sizes (
-    cylinder_size_id SERIAL PRIMARY KEY,
-    size_name VARCHAR(20) NOT NULL UNIQUE
+CREATE TABLE IF NOT EXISTS cylinder_volumes (
+    cylinder_volume_id SERIAL PRIMARY KEY,
+    cylinder_volume VARCHAR(10) NOT NULL UNIQUE
 );
 
+-- Crear tabla de referencia para cylinder_connectors
+CREATE TABLE IF NOT EXISTS cylinder_connectors (
+    cylinder_connector_id SERIAL PRIMARY KEY,
+    cylinder_connector VARCHAR(12) NOT NULL UNIQUE
+);
 
 -- Crear tabla de referencia para concentration_unit
 CREATE TABLE IF NOT EXISTS concentration_units (
@@ -104,15 +109,18 @@ CREATE TABLE IF NOT EXISTS items_parts (
 CREATE TABLE IF NOT EXISTS cylinders (
     cylinder_id SERIAL PRIMARY KEY,
     item_id INT NOT NULL,
-    cylinder_gas_type_id INT NOT NULL, -- Llave foránea a gas_types
-    cylinder_size_id INT NOT NULL, -- Llave foránea a cylinder_sizes
+    cylinder_gas_type_id INT NOT NULL, -- Llave foránea a cylinder_gas
+    cylinder_volume_id INT NOT NULL, -- Llave foránea a cylinder_sizes
     cylinder_unit_id INT NOT NULL, -- Llave foránea a concentration_units
-    cylinder_concentration DECIMAL(10, 2) CHECK (cylinder_concentration > 0), -- Asegurar concentraciones válidas
-    cylinder_expiration_date DATE CHECK (cylinder_expiration_date >= CURRENT_DATE), -- Asegurar fechas futuras
+    cylinder_number INT NOT NULL,
+    cylinder_concentration DECIMAL(10, 2),
+    cylinder_connector INT NOT NULL, -- Llave foránea a conectores
+    cylinder_expiration_date DATE,
     FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
-    FOREIGN KEY (cylinder_gas_type_id) REFERENCES gas_types(gas_type_id),
-    FOREIGN KEY (cylinder_size_id) REFERENCES cylinder_sizes(cylinder_size_id),
-    FOREIGN KEY (cylinder_unit_id) REFERENCES concentration_units(concentration_unit_id)
+    FOREIGN KEY (cylinder_gas_type_id) REFERENCES cylinder_gas(cylinder_gas_id),
+    FOREIGN KEY (cylinder_volume_id) REFERENCES cylinder_volumes(cylinder_volume_id),
+    FOREIGN KEY (cylinder_unit_id) REFERENCES concentration_units(concentration_unit_id),
+    FOREIGN KEY (cylinder_connector) REFERENCES cylinder_connectors(cylinder_connector_id)
 );
 
 -- Crear stations table
@@ -124,7 +132,7 @@ CREATE TABLE IF NOT EXISTS stations (
     station_longitude DECIMAL(9,6),
     station_address TEXT,
     station_description TEXT,
-    operational_since DATE CHECK (operational_since <= CURRENT_DATE) -- Asegurar que sea una fecha pasada
+    operational_since DATE
 );
 
 -- Crear inventory table

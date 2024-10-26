@@ -29,25 +29,30 @@ VALUES
 ON CONFLICT DO NOTHING;
 
 -- Insertar valores iniciales en gas_types
-INSERT INTO gas_types (gas_type_name)
+INSERT INTO cylinder_gas (gas_type_name)
 VALUES
-    ('nitrogen'),
-    ('oxygen'),
-    ('argon'),
-    ('carbon dioxide'),
-    ('hydrogen'),
-    ('helium'),
-    ('methane'),
-    ('water')
+    ('CO'),
+    ('NO'),
+    ('SO2'),
+    ('H2S'),
+    ('NO2'),
 ON CONFLICT DO NOTHING;
 
 -- Insertar valores iniciales en cylinder_sizes
-INSERT INTO cylinder_sizes (size_name)
+INSERT INTO cylinder_volumes (cylinder_volume)
 VALUES
-    ('small'),
-    ('medium'),
-    ('large')
+    ('83,4 CF'),
+    ('140 CF'),
 ON CONFLICT DO NOTHING;
+
+-- Insertar valores iniciales en cylinder_connectors
+INSERT INTO cylinder_connectors (cylinder_connector)
+VALUES
+    ('CGA-330'),
+    ('CGA-350'),
+    ('CGA-660')
+ON CONFLICT DO NOTHING;
+
 
 -- Insertar valores iniciales en concentration_units
 INSERT INTO concentration_units (unit_name)
