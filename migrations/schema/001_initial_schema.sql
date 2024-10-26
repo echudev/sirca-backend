@@ -116,6 +116,7 @@ CREATE TABLE IF NOT EXISTS cylinders (
     cylinder_concentration DECIMAL(10, 2),
     cylinder_connector INT NOT NULL, -- Llave foránea a conectores
     cylinder_expiration_date DATE,
+    cylinder_certificate TEXT,
     FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
     FOREIGN KEY (cylinder_gas_type_id) REFERENCES cylinder_gas(cylinder_gas_id),
     FOREIGN KEY (cylinder_volume_id) REFERENCES cylinder_volumes(cylinder_volume_id),
