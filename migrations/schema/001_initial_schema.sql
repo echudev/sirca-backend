@@ -112,7 +112,6 @@ CREATE TABLE IF NOT EXISTS cylinders (
     cylinder_gas_type_id INT NOT NULL, -- Llave foránea a cylinder_gas
     cylinder_volume_id INT NOT NULL, -- Llave foránea a cylinder_sizes
     cylinder_unit_id INT NOT NULL, -- Llave foránea a concentration_units
-    cylinder_number INT NOT NULL,
     cylinder_concentration DECIMAL(10, 2),
     cylinder_connector INT NOT NULL, -- Llave foránea a conectores
     cylinder_expiration_date DATE,
