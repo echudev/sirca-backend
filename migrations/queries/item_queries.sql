@@ -1,16 +1,13 @@
--- name: SaveItem :one
-WITH type_lookup AS (
-    SELECT item_type_id FROM item_types WHERE type_name = $$type_name$$
-)
+-- name: CreateItem :one
 INSERT INTO items (
     item_type_id,
     item_name,
     item_description
 )
 VALUES (
-    (SELECT item_type_id FROM type_lookup),
-    $$item_name$$,
-    $$item_description$$
+    $1,
+    $2,
+    $3
 ) RETURNING item_id;
 
 

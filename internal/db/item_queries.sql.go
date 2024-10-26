@@ -11,6 +11,32 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createItem = `-- name: CreateItem :one
+INSERT INTO items (
+    item_type_id,
+    item_name,
+    item_description
+)
+VALUES (
+    $1,
+    $2,
+    $3
+) RETURNING item_id
+`
+
+type CreateItemParams struct {
+	ItemTypeID      int32       `json:"item_type_id"`
+	ItemName        string      `json:"item_name"`
+	ItemDescription pgtype.Text `json:"item_description"`
+}
+
+func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createItem, arg.ItemTypeID, arg.ItemName, arg.ItemDescription)
+	var item_id int32
+	err := row.Scan(&item_id)
+	return item_id, err
+}
+
 const getItems = `-- name: GetItems :many
 SELECT
     i.item_id,
@@ -99,27 +125,4 @@ func (q *Queries) GetStations(ctx context.Context) ([]GetStationsRow, error) {
 		return nil, err
 	}
 	return items, nil
-}
-
-const saveItem = `-- name: SaveItem :one
-WITH type_lookup AS (
-    SELECT item_type_id FROM item_types WHERE type_name = $$type_name$$
-)
-INSERT INTO items (
-    item_type_id,
-    item_name,
-    item_description
-)
-VALUES (
-    (SELECT item_type_id FROM type_lookup),
-    $$item_name$$,
-    $$item_description$$
-) RETURNING item_id
-`
-
-func (q *Queries) SaveItem(ctx context.Context) (int32, error) {
-	row := q.db.QueryRow(ctx, saveItem)
-	var item_id int32
-	err := row.Scan(&item_id)
-	return item_id, err
 }
