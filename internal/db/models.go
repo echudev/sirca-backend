@@ -14,7 +14,8 @@ type Analyzer struct {
 	BrandID                 int32       `json:"brand_id"`
 	ModelID                 int32       `json:"model_id"`
 	AnalyzerStateID         int32       `json:"analyzer_state_id"`
-	AnalyzerPollutantID     int32       `json:"analyzer_pollutant_id"`
+	AnalyzerSerialnumber    string      `json:"analyzer_serialnumber"`
+	AnalyzerPollutant       string      `json:"analyzer_pollutant"`
 	AnalyzerLastCalibration pgtype.Date `json:"analyzer_last_calibration"`
 	AnalyzerLastMaintenance pgtype.Date `json:"analyzer_last_maintenance"`
 }
@@ -32,8 +33,9 @@ type Brand struct {
 type Cylinder struct {
 	CylinderID             int32          `json:"cylinder_id"`
 	ItemID                 int32          `json:"item_id"`
+	CylinderNumber         string         `json:"cylinder_number"`
 	CylinderConcentration  pgtype.Numeric `json:"cylinder_concentration"`
-	CylinderConnector      int32          `json:"cylinder_connector"`
+	CylinderConnector      string         `json:"cylinder_connector"`
 	CylinderExpirationDate pgtype.Date    `json:"cylinder_expiration_date"`
 	CylinderCertificate    pgtype.Text    `json:"cylinder_certificate"`
 }
@@ -49,6 +51,7 @@ type Inventory struct {
 type Item struct {
 	ItemID          int32              `json:"item_id"`
 	ItemTypeID      int32              `json:"item_type_id"`
+	ItemCode        string             `json:"item_code"`
 	ItemName        string             `json:"item_name"`
 	ItemDescription pgtype.Text        `json:"item_description"`
 	CreatedAt       pgtype.Timestamptz `json:"created_at"`
@@ -71,9 +74,11 @@ type Model struct {
 }
 
 type Part struct {
-	PartID      int32 `json:"part_id"`
-	ItemID      int32 `json:"item_id"`
-	PartStateID int32 `json:"part_state_id"`
+	PartID           int32  `json:"part_id"`
+	ItemID           int32  `json:"item_id"`
+	PartNumber       string `json:"part_number"`
+	PartSerialnumber string `json:"part_serialnumber"`
+	PartStateID      int32  `json:"part_state_id"`
 }
 
 type PartState struct {

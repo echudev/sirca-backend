@@ -11,27 +11,85 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const createAnalyzer = `-- name: CreateAnalyzer :one
+INSERT INTO analyzers (
+    item_id,
+    brand_id,
+    model_id,
+    analyzer_state_id,
+    analyzer_serialnumber,
+    analyzer_pollutant,
+    analyzer_last_calibration,
+    analyzer_last_maintenance
+) VALUES (
+    $1,           -- item_id obtenido del primer INSERT en items
+    $2,           -- brand_id
+    $3,           -- model_id
+    $4,           -- analyzer_state_id
+    $5,           -- analyzer_serialnumber
+    $6,           -- analyzer_pollutant
+    $7,           -- analyzer_last_calibration
+    $8            -- analyzer_last_maintenance
+) RETURNING analyzer_id
+`
+
+type CreateAnalyzerParams struct {
+	ItemID                  int32       `json:"item_id"`
+	BrandID                 int32       `json:"brand_id"`
+	ModelID                 int32       `json:"model_id"`
+	AnalyzerStateID         int32       `json:"analyzer_state_id"`
+	AnalyzerSerialnumber    string      `json:"analyzer_serialnumber"`
+	AnalyzerPollutant       string      `json:"analyzer_pollutant"`
+	AnalyzerLastCalibration pgtype.Date `json:"analyzer_last_calibration"`
+	AnalyzerLastMaintenance pgtype.Date `json:"analyzer_last_maintenance"`
+}
+
+func (q *Queries) CreateAnalyzer(ctx context.Context, arg CreateAnalyzerParams) (int32, error) {
+	row := q.db.QueryRow(ctx, createAnalyzer,
+		arg.ItemID,
+		arg.BrandID,
+		arg.ModelID,
+		arg.AnalyzerStateID,
+		arg.AnalyzerSerialnumber,
+		arg.AnalyzerPollutant,
+		arg.AnalyzerLastCalibration,
+		arg.AnalyzerLastMaintenance,
+	)
+	var analyzer_id int32
+	err := row.Scan(&analyzer_id)
+	return analyzer_id, err
+}
+
 const createItem = `-- name: CreateItem :one
 INSERT INTO items (
     item_type_id,
+    item_code,
     item_name,
-    item_description
-)
-VALUES (
-    $1,
-    $2,
-    $3
+    item_description,
+    created_at
+) VALUES (
+    $1,         -- item_type_id
+    $2,         -- item_code (generado en el backend)
+    $3,         -- item_name
+    $4,         -- item_description
+    DEFAULT     -- created_at, usa la marca de tiempo actual
 ) RETURNING item_id
 `
 
 type CreateItemParams struct {
 	ItemTypeID      int32       `json:"item_type_id"`
+	ItemCode        string      `json:"item_code"`
 	ItemName        string      `json:"item_name"`
 	ItemDescription pgtype.Text `json:"item_description"`
 }
 
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (int32, error) {
-	row := q.db.QueryRow(ctx, createItem, arg.ItemTypeID, arg.ItemName, arg.ItemDescription)
+	row := q.db.QueryRow(ctx, createItem,
+		arg.ItemTypeID,
+		arg.ItemCode,
+		arg.ItemName,
+		arg.ItemDescription,
+	)
 	var item_id int32
 	err := row.Scan(&item_id)
 	return item_id, err

@@ -11,6 +11,7 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/joho/godotenv"
 )
 
@@ -27,19 +28,19 @@ func run() error {
 	}
 
 	// Connect to the database
-	conn, err := db.ConnectDB()
+	connPool, err := db.ConnectDB()
 	if err != nil {
 		return fmt.Errorf("failed to connect to database: %w", err)
 	}
-	defer conn.Close()
+	defer connPool.Close()
 
 	// Create queries with the connection pool
-	queries := db.New(conn)
+	queries := db.New(connPool)
 
 	// Create and configure the server
 	srv := &http.Server{
 		Addr:         ":8080",
-		Handler:      setupRoutes(queries),
+		Handler:      setupRoutes(queries, connPool),
 		ReadTimeout:  15 * time.Second,
 		WriteTimeout: 15 * time.Second,
 		IdleTimeout:  60 * time.Second,
@@ -57,11 +58,13 @@ func run() error {
 	return gracefulShutdown(srv)
 }
 
-func setupRoutes(queries *db.Queries) http.Handler {
+func setupRoutes(queries *db.Queries, pool *pgxpool.Pool) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	// Define routes with HTTP verbs
 	mux.HandleFunc("GET /items", handlers.GetItems(queries))
+	mux.HandleFunc("POST /items", handlers.CreateItem(queries))
+	mux.HandleFunc("POST /analyzers", handlers.CreateAnalyzer(queries, pool))
 	mux.HandleFunc("GET /stations", handlers.GetStations(queries))
 	return mux
 }

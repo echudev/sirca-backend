@@ -37,6 +37,7 @@ CREATE TABLE IF NOT EXISTS models (
 CREATE TABLE IF NOT EXISTS items (
     item_id SERIAL PRIMARY KEY,
     item_type_id INT NOT NULL,
+    item_code VARCHAR(20) NOT NULL UNIQUE,
     item_name VARCHAR(100) NOT NULL,
     item_description TEXT,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
@@ -50,7 +51,8 @@ CREATE TABLE IF NOT EXISTS analyzers (
     brand_id INT NOT NULL,
     model_id INT NOT NULL,
     analyzer_state_id INT NOT NULL,
-    analyzer_pollutant_id INT NOT NULL,
+    analyzer_serialnumber VARCHAR(40) NOT NULL,
+    analyzer_pollutant VARCHAR(40) NOT NULL,
     analyzer_last_calibration DATE,
     analyzer_last_maintenance DATE,
     FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
@@ -63,6 +65,8 @@ CREATE TABLE IF NOT EXISTS analyzers (
 CREATE TABLE IF NOT EXISTS parts (
     part_id SERIAL PRIMARY KEY,
     item_id INT NOT NULL,
+    part_number VARCHAR(30) NOT NULL,
+    part_serialnumber VARCHAR(40) NOT NULL,
     part_state_id INT NOT NULL,
     FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
     FOREIGN KEY (part_state_id) REFERENCES part_states(part_state_id)
@@ -81,9 +85,10 @@ CREATE TABLE IF NOT EXISTS items_parts (
 CREATE TABLE IF NOT EXISTS cylinders (
     cylinder_id SERIAL PRIMARY KEY,
     item_id INT NOT NULL,
+    cylinder_number VARCHAR(30) NOT NULL,
     cylinder_concentration DECIMAL(10, 2),
-    cylinder_connector INT NOT NULL,
-    cylinder_expiration_date DATE,
+    cylinder_connector VARCHAR(20) NOT NULL,
+    cylinder_expiration_date DATE NOT NULL,
     cylinder_certificate TEXT,
     FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE
 );
@@ -126,6 +131,31 @@ CREATE TABLE IF NOT EXISTS traslados (
     CHECK (station_id_origen <> station_id_destino)
 );
 
+-- Insertar valores iniciales en item_types
+INSERT INTO item_types (type_name)
+VALUES
+    ('analyzer'),
+    ('cylinder'),
+    ('part')
+ON CONFLICT DO NOTHING;
+
+-- Insertar valores iniciales en analyzer_states
+INSERT INTO analyzer_states (state_name)
+VALUES
+    ('active'),
+    ('inactive'),
+    ('maintenance')
+ON CONFLICT DO NOTHING;
+
+-- Insertar valores iniciales en part_states
+INSERT INTO part_states (part_state_name)
+VALUES
+    ('new'),
+    ('used'),
+    ('broken'),
+    ('obsolete')
+ON CONFLICT DO NOTHING;
+
 -- Crear índices adicionales para mejorar el rendimiento de consultas comunes
 CREATE INDEX IF NOT EXISTS idx_models_brand_id ON models(brand_id);
 CREATE INDEX IF NOT EXISTS idx_analyzers_item_id ON analyzers(item_id);
@@ -135,6 +165,7 @@ CREATE INDEX IF NOT EXISTS idx_inventory_station_id ON inventory(station_id);
 CREATE INDEX IF NOT EXISTS idx_traslados_item_station ON traslados(item_id, station_id_origen, station_id_destino);
 
 -- +goose Down
+
 -- Eliminar las tablas en el orden inverso para evitar errores de dependencia
 DROP TABLE IF EXISTS inventory;
 DROP TABLE IF EXISTS cylinders;
