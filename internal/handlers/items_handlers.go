@@ -67,8 +67,10 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		type RequestParams struct {
-			Item     *db.CreateItemParams     `json:"item"`
-			Analyzer *db.CreateAnalyzerParams `json:"analyzer"`
+			Item      *db.CreateItemParams     `json:"item"`
+			Analyzer  *db.CreateAnalyzerParams `json:"analyzer"`
+			BrandName string                   `json:"brand"`
+			ModelName string                   `json:"model"`
 		}
 		var req RequestParams
 
@@ -114,7 +116,20 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 		// Crear queries con la transacción
 		qtx := queries.WithTx(tx)
 
-		// Crear el item
+		// Busco id de marca y modelo con el nombre de la marca y modelo que envió el cliente
+		brandAndModelID, err := qtx.GetBrandAndModelId(r.Context(), db.GetBrandAndModelIdParams{
+			BrandName: req.BrandName,
+			ModelName: req.ModelName,
+		})
+		if err != nil {
+			http.Error(w, "Error getting brand and model ID", http.StatusInternalServerError)
+			return
+		}
+		// Asignar los ID de marca y modelo a los campos de la estructura de datos
+		req.Analyzer.BrandID = brandAndModelID.BrandID
+		req.Analyzer.ModelID = brandAndModelID.ModelID
+
+		// Creo el item
 		itemID, err := qtx.CreateItem(r.Context(), *req.Item)
 		if err != nil {
 			http.Error(w, "Error creating item", http.StatusInternalServerError)
