@@ -66,21 +66,24 @@ INSERT INTO items (
     item_code,
     item_name,
     item_description,
+    item_adquisition_date,
     created_at
 ) VALUES (
     $1,         -- item_type_id
     $2,         -- item_code (generado en el backend)
     $3,         -- item_name
     $4,         -- item_description
+    $5,         -- item_adquisition_date
     DEFAULT     -- created_at, usa la marca de tiempo actual
 ) RETURNING item_id
 `
 
 type CreateItemParams struct {
-	ItemTypeID      int32       `json:"item_type_id"`
-	ItemCode        string      `json:"item_code"`
-	ItemName        string      `json:"item_name"`
-	ItemDescription pgtype.Text `json:"item_description"`
+	ItemTypeID          int32       `json:"item_type_id"`
+	ItemCode            string      `json:"item_code"`
+	ItemName            string      `json:"item_name"`
+	ItemDescription     pgtype.Text `json:"item_description"`
+	ItemAdquisitionDate pgtype.Date `json:"item_adquisition_date"`
 }
 
 func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (int32, error) {
@@ -89,10 +92,37 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (int32, 
 		arg.ItemCode,
 		arg.ItemName,
 		arg.ItemDescription,
+		arg.ItemAdquisitionDate,
 	)
 	var item_id int32
 	err := row.Scan(&item_id)
 	return item_id, err
+}
+
+const getBrandAndModelId = `-- name: GetBrandAndModelId :one
+SELECT b.brand_id, m.model_id
+FROM brands b
+JOIN models m ON b.brand_id = m.brand_id
+WHERE b.brand_name = $1
+AND m.model_name = $2
+LIMIT 1
+`
+
+type GetBrandAndModelIdParams struct {
+	BrandName string `json:"brand_name"`
+	ModelName string `json:"model_name"`
+}
+
+type GetBrandAndModelIdRow struct {
+	BrandID int32 `json:"brand_id"`
+	ModelID int32 `json:"model_id"`
+}
+
+func (q *Queries) GetBrandAndModelId(ctx context.Context, arg GetBrandAndModelIdParams) (GetBrandAndModelIdRow, error) {
+	row := q.db.QueryRow(ctx, getBrandAndModelId, arg.BrandName, arg.ModelName)
+	var i GetBrandAndModelIdRow
+	err := row.Scan(&i.BrandID, &i.ModelID)
+	return i, err
 }
 
 const getItems = `-- name: GetItems :many

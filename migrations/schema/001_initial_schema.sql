@@ -40,11 +40,12 @@ CREATE TABLE IF NOT EXISTS items (
     item_code VARCHAR(20) NOT NULL UNIQUE,
     item_name VARCHAR(100) NOT NULL,
     item_description TEXT,
+    item_adquisition_date DATE NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (item_type_id) REFERENCES item_types(item_type_id) ON DELETE RESTRICT
 );
 
--- Crear tabla analyzers
+-- Create the analyzers table
 CREATE TABLE IF NOT EXISTS analyzers (
     analyzer_id SERIAL PRIMARY KEY,
     item_id INT NOT NULL UNIQUE,
@@ -57,8 +58,8 @@ CREATE TABLE IF NOT EXISTS analyzers (
     analyzer_last_maintenance DATE,
     FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
     FOREIGN KEY (brand_id) REFERENCES brands(brand_id),
-    FOREIGN KEY (model_id) REFERENCES models(model_id),
-    FOREIGN KEY (analyzer_state_id) REFERENCES analyzer_states(analyzer_state_id)
+    FOREIGN KEY (model_id) REFERENCES models(model_id) ON DELETE CASCADE,
+    FOREIGN KEY (analyzer_state_id) REFERENCES analyzer_states(analyzer_state_id) ON DELETE CASCADE
 );
 
 -- Crear tabla parts
@@ -69,7 +70,7 @@ CREATE TABLE IF NOT EXISTS parts (
     part_serialnumber VARCHAR(40) NOT NULL,
     part_state_id INT NOT NULL,
     FOREIGN KEY (item_id) REFERENCES items(item_id) ON DELETE CASCADE,
-    FOREIGN KEY (part_state_id) REFERENCES part_states(part_state_id)
+    FOREIGN KEY (part_state_id) REFERENCES part_states(part_state_id) ON DELETE CASCADE
 );
 
 -- Crear tabla items_parts para asociar items y parts
@@ -166,17 +167,31 @@ CREATE INDEX IF NOT EXISTS idx_traslados_item_station ON traslados(item_id, stat
 
 -- +goose Down
 
+DELETE FROM inventory;
+DELETE FROM traslados;
+DELETE FROM cylinders;
+DELETE FROM items_parts;
+DELETE FROM parts;
+DELETE FROM analyzers;  -- Eliminar antes de borrar models
+DELETE FROM models;
+DELETE FROM brands;
+DELETE FROM items;
+DELETE FROM analyzer_states;
+DELETE FROM part_states;
+DELETE FROM stations;
+DELETE FROM item_types;
+
 -- Eliminar las tablas en el orden inverso para evitar errores de dependencia
 DROP TABLE IF EXISTS inventory;
+DROP TABLE IF EXISTS traslados;
 DROP TABLE IF EXISTS cylinders;
 DROP TABLE IF EXISTS items_parts;
 DROP TABLE IF EXISTS parts;
 DROP TABLE IF EXISTS analyzers;
 DROP TABLE IF EXISTS analyzer_states;
 DROP TABLE IF EXISTS part_states;
-DROP TABLE IF EXISTS traslados;
 DROP TABLE IF EXISTS items;
 DROP TABLE IF EXISTS models;
-DROP TABLE IF EXISTS stations;
 DROP TABLE IF EXISTS brands;
+DROP TABLE IF EXISTS stations;
 DROP TABLE IF EXISTS item_types;

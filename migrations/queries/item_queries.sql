@@ -4,12 +4,14 @@ INSERT INTO items (
     item_code,
     item_name,
     item_description,
+    item_adquisition_date,
     created_at
 ) VALUES (
     $1,         -- item_type_id
     $2,         -- item_code (generado en el backend)
     $3,         -- item_name
     $4,         -- item_description
+    $5,         -- item_adquisition_date
     DEFAULT     -- created_at, usa la marca de tiempo actual
 ) RETURNING item_id;
 
@@ -32,6 +34,13 @@ JOIN
 SELECT station_id, station_name, station_image_url, operational_since, station_latitude, station_longitude, station_address
 FROM stations;
 
+-- name: GetBrandAndModelId :one
+SELECT b.brand_id, m.model_id
+FROM brands b
+JOIN models m ON b.brand_id = m.brand_id
+WHERE b.brand_name = $1
+AND m.model_name = $2
+LIMIT 1;
 
 -- name: CreateAnalyzer :one
 INSERT INTO analyzers (

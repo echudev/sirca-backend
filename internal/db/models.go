@@ -49,12 +49,13 @@ type Inventory struct {
 }
 
 type Item struct {
-	ItemID          int32              `json:"item_id"`
-	ItemTypeID      int32              `json:"item_type_id"`
-	ItemCode        string             `json:"item_code"`
-	ItemName        string             `json:"item_name"`
-	ItemDescription pgtype.Text        `json:"item_description"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
+	ItemID              int32              `json:"item_id"`
+	ItemTypeID          int32              `json:"item_type_id"`
+	ItemCode            string             `json:"item_code"`
+	ItemName            string             `json:"item_name"`
+	ItemDescription     pgtype.Text        `json:"item_description"`
+	ItemAdquisitionDate pgtype.Date        `json:"item_adquisition_date"`
+	CreatedAt           pgtype.Timestamptz `json:"created_at"`
 }
 
 type ItemType struct {

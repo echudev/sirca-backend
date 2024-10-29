@@ -51,11 +51,13 @@ func CreateItem(queries *db.Queries) http.HandlerFunc {
 		// Configurar la cabecera de respuesta y devolver el ID en JSON
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(map[string]any{
-			"status":           "success",
-			"id":               newItemId,
-			"item_name":        newItem.ItemName,
-			"item_type_id":     newItem.ItemTypeID,
-			"item_description": newItem.ItemDescription,
+			"status":                "success",
+			"id":                    newItemId,
+			"item_name":             newItem.ItemName,
+			"item_type_id":          newItem.ItemTypeID,
+			"item_description":      newItem.ItemDescription,
+			"item_code":             newItem.ItemCode,
+			"item_adquisition_date": newItem.ItemAdquisitionDate,
 		})
 	}
 }
@@ -81,19 +83,23 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 
 		// Validaciones
 		if req.Item.ItemName == "" {
-			http.Error(w, "Nombre is required", http.StatusBadRequest)
+			http.Error(w, "Item Name is required", http.StatusBadRequest)
+			return
+		}
+		if req.Item.ItemAdquisitionDate.Time.Format("2006-01-02") == "" {
+			http.Error(w, "Item Adquisition Date is required", http.StatusBadRequest)
 			return
 		}
 		if req.Analyzer.AnalyzerSerialnumber == "" {
-			http.Error(w, "Serial number is required", http.StatusBadRequest)
+			http.Error(w, "Analyzer Serial number is required", http.StatusBadRequest)
 			return
 		}
 		if req.Analyzer.AnalyzerPollutant == "" {
-			http.Error(w, "Pollutant is required", http.StatusBadRequest)
+			http.Error(w, "Analyzer Pollutant is required", http.StatusBadRequest)
 			return
 		}
 		if req.Analyzer.AnalyzerStateID == 0 {
-			http.Error(w, "State is required", http.StatusBadRequest)
+			http.Error(w, "Analyzer State is required", http.StatusBadRequest)
 			return
 		}
 
