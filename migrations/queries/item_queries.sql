@@ -20,9 +20,14 @@ INSERT INTO items (
 -- name: GetItems :many
 SELECT * FROM items;
 
+-- name: UpdateInventaryCode :one
+UPDATE items SET item_code = $1 WHERE item_id = $2 RETURNING item_code;
 
 -- name: GetStations :many
 SELECT *FROM stations;
+
+-- name: GetAnalyzers :many
+SELECT * FROM analyzers;
 
 -- name: GetItemTypeId :one
 SELECT item_type_id FROM item_types WHERE type_name = $1;
