@@ -22,9 +22,7 @@ SELECT * FROM items;
 
 
 -- name: GetStations :many
-SELECT station_id, station_name, station_image_url, operational_since, station_latitude, station_longitude, station_address
-FROM stations;
-
+SELECT *FROM stations;
 
 -- name: GetItemTypeId :one
 SELECT item_type_id FROM item_types WHERE type_name = $1;
