@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS models (
 CREATE TABLE IF NOT EXISTS items (
     item_id SERIAL PRIMARY KEY,
     item_type_id INT NOT NULL,
-    item_code VARCHAR(20) NOT NULL UNIQUE,
+    item_code VARCHAR(40) NOT NULL UNIQUE,
     item_name VARCHAR(100) NOT NULL,
     item_description TEXT,
     item_adquisition_date DATE NOT NULL,
@@ -52,7 +52,7 @@ CREATE TABLE IF NOT EXISTS analyzers (
     brand_id INT NOT NULL,
     model_id INT NOT NULL,
     analyzer_state_id INT NOT NULL,
-    analyzer_serialnumber VARCHAR(40) NOT NULL,
+    analyzer_serialnumber VARCHAR(40) NOT NULL UNIQUE,
     analyzer_pollutant VARCHAR(40) NOT NULL,
     analyzer_last_calibration DATE,
     analyzer_last_maintenance DATE,
