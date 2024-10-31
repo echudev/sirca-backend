@@ -99,68 +99,49 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (int32, 
 	return item_id, err
 }
 
-const getBrandAndModelId = `-- name: GetBrandAndModelId :one
-SELECT b.brand_id, m.model_id
-FROM brands b
-JOIN models m ON b.brand_id = m.brand_id
-WHERE b.brand_name = $1
-AND m.model_name = $2
-LIMIT 1
+const getBrandId = `-- name: GetBrandId :one
+SELECT brand_id FROM brands WHERE brand_name = $1
 `
 
-type GetBrandAndModelIdParams struct {
-	BrandName string `json:"brand_name"`
-	ModelName string `json:"model_name"`
+func (q *Queries) GetBrandId(ctx context.Context, brandName string) (int32, error) {
+	row := q.db.QueryRow(ctx, getBrandId, brandName)
+	var brand_id int32
+	err := row.Scan(&brand_id)
+	return brand_id, err
 }
 
-type GetBrandAndModelIdRow struct {
-	BrandID int32 `json:"brand_id"`
-	ModelID int32 `json:"model_id"`
-}
+const getItemTypeId = `-- name: GetItemTypeId :one
+SELECT item_type_id FROM item_types WHERE type_name = $1
+`
 
-func (q *Queries) GetBrandAndModelId(ctx context.Context, arg GetBrandAndModelIdParams) (GetBrandAndModelIdRow, error) {
-	row := q.db.QueryRow(ctx, getBrandAndModelId, arg.BrandName, arg.ModelName)
-	var i GetBrandAndModelIdRow
-	err := row.Scan(&i.BrandID, &i.ModelID)
-	return i, err
+func (q *Queries) GetItemTypeId(ctx context.Context, typeName string) (int32, error) {
+	row := q.db.QueryRow(ctx, getItemTypeId, typeName)
+	var item_type_id int32
+	err := row.Scan(&item_type_id)
+	return item_type_id, err
 }
 
 const getItems = `-- name: GetItems :many
-SELECT
-    i.item_id,
-    i.item_name,
-    i.item_description,
-    i.created_at,
-    it.type_name AS item_type
-FROM
-    items i
-JOIN
-    item_types it ON i.item_type_id = it.item_type_id
+SELECT item_id, item_type_id, item_code, item_name, item_description, item_adquisition_date, created_at FROM items
 `
 
-type GetItemsRow struct {
-	ItemID          int32              `json:"item_id"`
-	ItemName        string             `json:"item_name"`
-	ItemDescription pgtype.Text        `json:"item_description"`
-	CreatedAt       pgtype.Timestamptz `json:"created_at"`
-	ItemType        string             `json:"item_type"`
-}
-
-func (q *Queries) GetItems(ctx context.Context) ([]GetItemsRow, error) {
+func (q *Queries) GetItems(ctx context.Context) ([]Item, error) {
 	rows, err := q.db.Query(ctx, getItems)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetItemsRow
+	var items []Item
 	for rows.Next() {
-		var i GetItemsRow
+		var i Item
 		if err := rows.Scan(
 			&i.ItemID,
+			&i.ItemTypeID,
+			&i.ItemCode,
 			&i.ItemName,
 			&i.ItemDescription,
+			&i.ItemAdquisitionDate,
 			&i.CreatedAt,
-			&i.ItemType,
 		); err != nil {
 			return nil, err
 		}
@@ -170,6 +151,22 @@ func (q *Queries) GetItems(ctx context.Context) ([]GetItemsRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const getModelId = `-- name: GetModelId :one
+SELECT model_id FROM models WHERE brand_id = $1 AND model_name = $2
+`
+
+type GetModelIdParams struct {
+	BrandID   int32  `json:"brand_id"`
+	ModelName string `json:"model_name"`
+}
+
+func (q *Queries) GetModelId(ctx context.Context, arg GetModelIdParams) (int32, error) {
+	row := q.db.QueryRow(ctx, getModelId, arg.BrandID, arg.ModelName)
+	var model_id int32
+	err := row.Scan(&model_id)
+	return model_id, err
 }
 
 const getStations = `-- name: GetStations :many

@@ -18,29 +18,22 @@ INSERT INTO items (
 
 
 -- name: GetItems :many
-SELECT
-    i.item_id,
-    i.item_name,
-    i.item_description,
-    i.created_at,
-    it.type_name AS item_type
-FROM
-    items i
-JOIN
-    item_types it ON i.item_type_id = it.item_type_id;
+SELECT * FROM items;
 
 
 -- name: GetStations :many
 SELECT station_id, station_name, station_image_url, operational_since, station_latitude, station_longitude, station_address
 FROM stations;
 
--- name: GetBrandAndModelId :one
-SELECT b.brand_id, m.model_id
-FROM brands b
-JOIN models m ON b.brand_id = m.brand_id
-WHERE b.brand_name = $1
-AND m.model_name = $2
-LIMIT 1;
+
+-- name: GetItemTypeId :one
+SELECT item_type_id FROM item_types WHERE type_name = $1;
+
+-- name: GetBrandId :one
+SELECT brand_id FROM brands WHERE brand_name = $1;
+
+-- name: GetModelId :one
+SELECT model_id FROM models WHERE brand_id = $1 AND model_name = $2;
 
 -- name: CreateAnalyzer :one
 INSERT INTO analyzers (
