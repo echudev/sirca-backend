@@ -99,6 +99,40 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (int32, 
 	return item_id, err
 }
 
+const getAnalyzers = `-- name: GetAnalyzers :many
+SELECT analyzer_id, item_id, brand_id, model_id, analyzer_state_id, analyzer_serialnumber, analyzer_pollutant, analyzer_last_calibration, analyzer_last_maintenance FROM analyzers
+`
+
+func (q *Queries) GetAnalyzers(ctx context.Context) ([]Analyzer, error) {
+	rows, err := q.db.Query(ctx, getAnalyzers)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []Analyzer
+	for rows.Next() {
+		var i Analyzer
+		if err := rows.Scan(
+			&i.AnalyzerID,
+			&i.ItemID,
+			&i.BrandID,
+			&i.ModelID,
+			&i.AnalyzerStateID,
+			&i.AnalyzerSerialnumber,
+			&i.AnalyzerPollutant,
+			&i.AnalyzerLastCalibration,
+			&i.AnalyzerLastMaintenance,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
 const getBrandId = `-- name: GetBrandId :one
 SELECT brand_id FROM brands WHERE brand_name = $1
 `
@@ -170,37 +204,27 @@ func (q *Queries) GetModelId(ctx context.Context, arg GetModelIdParams) (int32, 
 }
 
 const getStations = `-- name: GetStations :many
-SELECT station_id, station_name, station_image_url, operational_since, station_latitude, station_longitude, station_address
-FROM stations
+SELECT station_id, station_name, station_image_url, station_latitude, station_longitude, station_address, station_description, operational_sinceFROM stations
 `
 
-type GetStationsRow struct {
-	StationID        int32          `json:"station_id"`
-	StationName      string         `json:"station_name"`
-	StationImageUrl  pgtype.Text    `json:"station_image_url"`
-	OperationalSince pgtype.Date    `json:"operational_since"`
-	StationLatitude  pgtype.Numeric `json:"station_latitude"`
-	StationLongitude pgtype.Numeric `json:"station_longitude"`
-	StationAddress   pgtype.Text    `json:"station_address"`
-}
-
-func (q *Queries) GetStations(ctx context.Context) ([]GetStationsRow, error) {
+func (q *Queries) GetStations(ctx context.Context) ([]Station, error) {
 	rows, err := q.db.Query(ctx, getStations)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
-	var items []GetStationsRow
+	var items []Station
 	for rows.Next() {
-		var i GetStationsRow
+		var i Station
 		if err := rows.Scan(
 			&i.StationID,
 			&i.StationName,
 			&i.StationImageUrl,
-			&i.OperationalSince,
 			&i.StationLatitude,
 			&i.StationLongitude,
 			&i.StationAddress,
+			&i.StationDescription,
+			&i.OperationalSince,
 		); err != nil {
 			return nil, err
 		}
@@ -210,4 +234,20 @@ func (q *Queries) GetStations(ctx context.Context) ([]GetStationsRow, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateInventaryCode = `-- name: UpdateInventaryCode :one
+UPDATE items SET item_code = $1 WHERE item_id = $2 RETURNING item_code
+`
+
+type UpdateInventaryCodeParams struct {
+	ItemCode string `json:"item_code"`
+	ItemID   int32  `json:"item_id"`
+}
+
+func (q *Queries) UpdateInventaryCode(ctx context.Context, arg UpdateInventaryCodeParams) (string, error) {
+	row := q.db.QueryRow(ctx, updateInventaryCode, arg.ItemCode, arg.ItemID)
+	var item_code string
+	err := row.Scan(&item_code)
+	return item_code, err
 }

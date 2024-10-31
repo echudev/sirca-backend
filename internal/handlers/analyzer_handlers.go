@@ -3,11 +3,28 @@ package handlers
 import (
 	"echudev/sirca-backend/internal/db"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 
+	"github.com/jackc/pgx/v5/pgtype"
 	"github.com/jackc/pgx/v5/pgxpool"
 )
+
+// Handler que devuelve todos los Analyzers(GET /analyzers)
+func GetAnalyzers(queries *db.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		analyzers, err := queries.GetAnalyzers(r.Context())
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(analyzers)
+	}
+}
 
 // Handler para Crear un Analyzer (POST /analyzers)
 func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
@@ -64,8 +81,14 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 			http.Error(w, "Item Type Name is required", http.StatusBadRequest)
 			return
 		}
-
-		// Genero código de inventario
+		if !req.Item.ItemAdquisitionDate.Valid {
+			http.Error(w, "Date is required", http.StatusBadRequest)
+			return
+		}
+		if req.Item.ItemAdquisitionDate.Time.IsZero() {
+			http.Error(w, "Invalid date", http.StatusBadRequest)
+			return
+		}
 
 		// Iniciar la transacción
 		tx, err := pool.Begin(r.Context())
@@ -97,10 +120,9 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 
-		//Asignar los ID de tipo de item al campo de estructura de datos
+		//Asigno el ID de tipo de item al campo de estructura de datos
 		req.Item.ItemTypeID = itemTypeID
-
-		// Asignar los ID de marca y modelo a los campos de la estructura de datos
+		// Asigno los ID de marca y modelo a los campos de la estructura de datos
 		req.Analyzer.BrandID = brandID
 		req.Analyzer.ModelID = modelID
 
@@ -108,6 +130,16 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 		itemID, err := qtx.CreateItem(r.Context(), *req.Item)
 		if err != nil {
 			http.Error(w, "Error creating item", http.StatusInternalServerError)
+			return
+		}
+
+		// Genero el código de inventario
+		itemCode, err := GenInventaryCode(req.ItemTypeName, req.BrandName, req.ModelName, req.Item.ItemAdquisitionDate, itemID)
+
+		// Actualizar el registro con el código
+		itemCode, err = qtx.UpdateInventaryCode(r.Context(), db.UpdateInventaryCodeParams{ItemID: itemID, ItemCode: itemCode})
+		if err != nil {
+			http.Error(w, "Error updating inventary code", http.StatusInternalServerError)
 			return
 		}
 
@@ -139,4 +171,37 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 			return
 		}
 	}
+}
+
+func GenInventaryCode(reqTypeName string, reqModelName string, reqBrandName string, reqItemAdquisitonDate pgtype.Date, reqItemId int32) (string, error) {
+	// Validar que los strings tengan al menos 3 caracteres
+	if len(reqTypeName) < 3 {
+		return "", fmt.Errorf("type name must be at least 3 characters long")
+	}
+	if len(reqModelName) < 3 {
+		return "", fmt.Errorf("model name must be at least 3 characters long")
+	}
+	if len(reqBrandName) < 3 {
+		return "", fmt.Errorf("brand name must be at least 3 characters long")
+	}
+
+	// Validar fecha
+	if !reqItemAdquisitonDate.Valid {
+		return "", fmt.Errorf("invalid date")
+	}
+
+	// Validar ID
+	if reqItemId <= 0 {
+		return "", fmt.Errorf("invalid item ID")
+	}
+
+	type_code := reqTypeName[:3]
+	brand_code := reqBrandName[:3]
+	model_code := reqModelName[:3]
+	year_code := strconv.Itoa(reqItemAdquisitonDate.Time.Year())
+	id_code := strconv.Itoa(int(reqItemId))
+
+	item_code := strings.ToUpper(type_code + "-" + brand_code + "-" + model_code + "-" + year_code + "-" + id_code)
+
+	return item_code, nil
 }
