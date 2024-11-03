@@ -204,7 +204,7 @@ func (q *Queries) GetModelId(ctx context.Context, arg GetModelIdParams) (int32, 
 }
 
 const getStations = `-- name: GetStations :many
-SELECT station_id, station_name, station_image_url, station_latitude, station_longitude, station_address, station_description, operational_sinceFROM stations
+SELECT station_id, station_name, station_image_url, station_latitude, station_longitude, station_address, station_description, operational_since FROM stations
 `
 
 func (q *Queries) GetStations(ctx context.Context) ([]Station, error) {

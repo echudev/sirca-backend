@@ -24,7 +24,7 @@ SELECT * FROM items;
 UPDATE items SET item_code = $1 WHERE item_id = $2 RETURNING item_code;
 
 -- name: GetStations :many
-SELECT *FROM stations;
+SELECT * FROM stations;
 
 -- name: GetAnalyzers :many
 SELECT * FROM analyzers;
