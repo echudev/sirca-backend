@@ -45,16 +45,12 @@ INSERT INTO analyzers (
     model_id,
     analyzer_state_id,
     analyzer_serialnumber,
-    analyzer_pollutant,
-    analyzer_last_calibration,
-    analyzer_last_maintenance
+    analyzer_pollutant
 ) VALUES (
     $1,           -- item_id obtenido del primer INSERT en items
     $2,           -- brand_id
     $3,           -- model_id
     $4,           -- analyzer_state_id
     $5,           -- analyzer_serialnumber
-    $6,           -- analyzer_pollutant
-    $7,           -- analyzer_last_calibration
-    $8            -- analyzer_last_maintenance
+    $6           -- analyzer_pollutant
 ) RETURNING analyzer_id ;

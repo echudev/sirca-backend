@@ -134,7 +134,7 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		// Genero el código de inventario
-		itemCode, err := GenInventaryCode(req.ItemTypeName, req.BrandName, req.ModelName, req.Item.ItemAdquisitionDate, itemID)
+		itemCode, err := GenerateInventaryCode(req.ItemTypeName, req.BrandName, req.ModelName, req.Item.ItemAdquisitionDate, itemID)
 		if err != nil {
 			http.Error(w, "Error generating item code", http.StatusInternalServerError)
 			return
@@ -178,7 +178,7 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 	}
 }
 
-func GenInventaryCode(reqTypeName string, reqModelName string, reqBrandName string, reqItemAdquisitonDate pgtype.Date, reqItemId int32) (string, error) {
+func GenerateInventaryCode(reqTypeName string, reqBrandName string, reqModelName string, reqItemAdquisitonDate pgtype.Date, reqItemId int32) (string, error) {
 	// Validar que los strings tengan al menos 3 caracteres
 	if len(reqTypeName) < 3 {
 		return "", fmt.Errorf("type name must be at least 3 characters long")
