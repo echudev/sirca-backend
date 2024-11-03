@@ -4,8 +4,11 @@ import (
 	"echudev/sirca-backend/internal/db"
 	"echudev/sirca-backend/internal/services"
 	"encoding/json"
+	"fmt"
 	"log"
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5/pgxpool"
 )
@@ -20,6 +23,110 @@ func GetAnalyzers(queries *db.Queries) http.HandlerFunc {
 		}
 		w.Header().Set("Content-Type", "application/json")
 		json.NewEncoder(w).Encode(analyzers)
+	}
+}
+
+func DeleteAnalyzer(queries *db.Queries) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		// Extraer el ID del path en lugar de usar el body
+		pathID := r.URL.Path[len("/analyzers/"):]
+		analyzerID, err := strconv.Atoi(pathID)
+		if err != nil {
+			http.Error(w, "Invalid analyzer ID", http.StatusBadRequest)
+			return
+		}
+
+		// Convertir a int32
+		id32 := int32(analyzerID)
+
+		// Verificar si el Analyzer con el ID especificado existe en la base de datos
+		exists, err := queries.AnalyzerExists(r.Context(), id32)
+		if err != nil {
+			log.Printf("Error checking if analyzer exists: %v", err)
+			http.Error(w, "Failed to verify analyzer existence", http.StatusInternalServerError)
+			return
+		}
+
+		if !exists {
+			http.Error(w, "Analyzer not found", http.StatusNotFound)
+			return
+		}
+
+		// Ejecutar la consulta de eliminación en la base de datos
+		err = queries.DeleteAnalyzer(r.Context(), id32)
+		if err != nil {
+			log.Printf("Error deleting analyzer: %v", err)
+			http.Error(w, "Failed to delete analyzer", http.StatusInternalServerError)
+			return
+		}
+
+		// Responder con éxito
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Analyzer deleted successfully")
+	}
+}
+
+// Handler para actualizar un Analyzer (PATCH /analyzers/:id)
+func UpdateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+
+		pathId := r.URL.Path[len("/analyzers/"):]
+		analyzerID, err := strconv.Atoi(pathId)
+		if err != nil {
+			http.Error(w, "Invalid analyzer ID", http.StatusBadRequest)
+			return
+		}
+
+		// Crear un mapa para almacenar los campos a actualizar
+		var req map[string]any
+
+		defer r.Body.Close() // Cerrar el cuerpo de la solicitud al finalizar
+
+		// Decodificar el JSON en el mapa `req`
+		if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+			log.Printf("Error decodificando JSON: %v", err)
+			http.Error(w, "Invalid request payload", http.StatusBadRequest)
+			return
+		}
+
+		// Construir la consulta de actualización dinámica
+		setClauses := []string{}
+		args := []any{analyzerID} // El primer argumento es el `analyzerID`
+		argPosition := 2          // Comenzamos en 2 porque el primer argumento es el `analyzerID`
+
+		for field, value := range req {
+			setClauses = append(setClauses, fmt.Sprintf("%s = $%d", field, argPosition))
+			args = append(args, value)
+			argPosition++
+		}
+
+		// Si no hay campos para actualizar, devolver un error
+		if len(setClauses) == 0 {
+			http.Error(w, "No fields to update", http.StatusBadRequest)
+			return
+		}
+
+		// Construir la consulta SQL
+		query := fmt.Sprintf("UPDATE analyzers SET %s WHERE analyzer_id = $1", strings.Join(setClauses, ", "))
+
+		// Ejecutar la consulta en la base de datos
+		result, err := pool.Exec(r.Context(), query, args...)
+		if err != nil {
+			log.Printf("Error updating analyzer: %v", err)
+			http.Error(w, "Failed to update analyzer", http.StatusInternalServerError)
+			return
+		}
+
+		// Verificar si se afectaron filas
+		rowsAffected := result.RowsAffected()
+		if rowsAffected == 0 {
+			http.Error(w, "Analyzer not found", http.StatusNotFound)
+			return
+		}
+
+		// Responder con éxito
+		w.WriteHeader(http.StatusOK)
+		fmt.Fprint(w, "Analyzer updated successfully")
 	}
 }
 

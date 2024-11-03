@@ -26,9 +26,6 @@ UPDATE items SET item_code = $1 WHERE item_id = $2 RETURNING item_code;
 -- name: GetStations :many
 SELECT * FROM stations;
 
--- name: GetAnalyzers :many
-SELECT * FROM analyzers;
-
 -- name: GetItemTypeId :one
 SELECT item_type_id FROM item_types WHERE type_name = $1;
 
@@ -54,3 +51,27 @@ INSERT INTO analyzers (
     $5,           -- analyzer_serialnumber
     $6           -- analyzer_pollutant
 ) RETURNING analyzer_id ;
+
+-- name: DeleteAnalyzer :exec
+DELETE FROM analyzers WHERE analyzer_id = $1;
+
+-- name: UpdateAnalyzer :exec
+UPDATE analyzers SET
+    item_id = $2,
+    brand_id = $3,
+    model_id = $4,
+    analyzer_state_id = $5,
+    analyzer_serialnumber = $6,
+    analyzer_pollutant = $7,
+    analyzer_last_calibration = $8,
+    analyzer_last_maintenance = $9
+WHERE analyzer_id = $1; 
+
+-- name: AnalyzerExists :one
+SELECT EXISTS(SELECT 1 FROM analyzers WHERE analyzer_id = $1);
+
+-- name: GetAnalyzer :one
+SELECT * FROM analyzers WHERE analyzer_id = $1;
+
+-- name: GetAnalyzers :many
+SELECT * FROM analyzers;

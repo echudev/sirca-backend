@@ -65,6 +65,8 @@ func setupRoutes(queries *db.Queries, pool *pgxpool.Pool) *http.ServeMux {
 	mux.HandleFunc("GET /items", handlers.GetItems(queries))
 	mux.HandleFunc("GET /analyzers", handlers.GetAnalyzers(queries))
 	mux.HandleFunc("POST /analyzers", handlers.CreateAnalyzer(queries, pool))
+	mux.HandleFunc("PATCH /analyzers/{id}", handlers.UpdateAnalyzer(queries, pool))
+	mux.HandleFunc("DELETE /analyzers/{id}", handlers.DeleteAnalyzer(queries))
 	mux.HandleFunc("GET /stations", handlers.GetStations(queries))
 	return mux
 }

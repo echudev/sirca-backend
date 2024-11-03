@@ -11,6 +11,17 @@ import (
 	"github.com/jackc/pgx/v5/pgtype"
 )
 
+const analyzerExists = `-- name: AnalyzerExists :one
+SELECT EXISTS(SELECT 1 FROM analyzers WHERE analyzer_id = $1)
+`
+
+func (q *Queries) AnalyzerExists(ctx context.Context, analyzerID int32) (bool, error) {
+	row := q.db.QueryRow(ctx, analyzerExists, analyzerID)
+	var exists bool
+	err := row.Scan(&exists)
+	return exists, err
+}
+
 const createAnalyzer = `-- name: CreateAnalyzer :one
 INSERT INTO analyzers (
     item_id,
@@ -89,6 +100,36 @@ func (q *Queries) CreateItem(ctx context.Context, arg CreateItemParams) (int32, 
 	var item_id int32
 	err := row.Scan(&item_id)
 	return item_id, err
+}
+
+const deleteAnalyzer = `-- name: DeleteAnalyzer :exec
+DELETE FROM analyzers WHERE analyzer_id = $1
+`
+
+func (q *Queries) DeleteAnalyzer(ctx context.Context, analyzerID int32) error {
+	_, err := q.db.Exec(ctx, deleteAnalyzer, analyzerID)
+	return err
+}
+
+const getAnalyzer = `-- name: GetAnalyzer :one
+SELECT analyzer_id, item_id, brand_id, model_id, analyzer_state_id, analyzer_serialnumber, analyzer_pollutant, analyzer_last_calibration, analyzer_last_maintenance FROM analyzers WHERE analyzer_id = $1
+`
+
+func (q *Queries) GetAnalyzer(ctx context.Context, analyzerID int32) (Analyzer, error) {
+	row := q.db.QueryRow(ctx, getAnalyzer, analyzerID)
+	var i Analyzer
+	err := row.Scan(
+		&i.AnalyzerID,
+		&i.ItemID,
+		&i.BrandID,
+		&i.ModelID,
+		&i.AnalyzerStateID,
+		&i.AnalyzerSerialnumber,
+		&i.AnalyzerPollutant,
+		&i.AnalyzerLastCalibration,
+		&i.AnalyzerLastMaintenance,
+	)
+	return i, err
 }
 
 const getAnalyzers = `-- name: GetAnalyzers :many
@@ -226,6 +267,46 @@ func (q *Queries) GetStations(ctx context.Context) ([]Station, error) {
 		return nil, err
 	}
 	return items, nil
+}
+
+const updateAnalyzer = `-- name: UpdateAnalyzer :exec
+UPDATE analyzers SET
+    item_id = $2,
+    brand_id = $3,
+    model_id = $4,
+    analyzer_state_id = $5,
+    analyzer_serialnumber = $6,
+    analyzer_pollutant = $7,
+    analyzer_last_calibration = $8,
+    analyzer_last_maintenance = $9
+WHERE analyzer_id = $1
+`
+
+type UpdateAnalyzerParams struct {
+	AnalyzerID              int32       `json:"analyzer_id"`
+	ItemID                  int32       `json:"item_id"`
+	BrandID                 int32       `json:"brand_id"`
+	ModelID                 int32       `json:"model_id"`
+	AnalyzerStateID         int32       `json:"analyzer_state_id"`
+	AnalyzerSerialnumber    string      `json:"analyzer_serialnumber"`
+	AnalyzerPollutant       string      `json:"analyzer_pollutant"`
+	AnalyzerLastCalibration pgtype.Date `json:"analyzer_last_calibration"`
+	AnalyzerLastMaintenance pgtype.Date `json:"analyzer_last_maintenance"`
+}
+
+func (q *Queries) UpdateAnalyzer(ctx context.Context, arg UpdateAnalyzerParams) error {
+	_, err := q.db.Exec(ctx, updateAnalyzer,
+		arg.AnalyzerID,
+		arg.ItemID,
+		arg.BrandID,
+		arg.ModelID,
+		arg.AnalyzerStateID,
+		arg.AnalyzerSerialnumber,
+		arg.AnalyzerPollutant,
+		arg.AnalyzerLastCalibration,
+		arg.AnalyzerLastMaintenance,
+	)
+	return err
 }
 
 const updateInventaryCode = `-- name: UpdateInventaryCode :one
