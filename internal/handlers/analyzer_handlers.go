@@ -135,6 +135,10 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 
 		// Genero el código de inventario
 		itemCode, err := GenInventaryCode(req.ItemTypeName, req.BrandName, req.ModelName, req.Item.ItemAdquisitionDate, itemID)
+		if err != nil {
+			http.Error(w, "Error generating item code", http.StatusInternalServerError)
+			return
+		}
 
 		// Actualizar el registro con el código
 		itemCode, err = qtx.UpdateInventaryCode(r.Context(), db.UpdateInventaryCodeParams{ItemID: itemID, ItemCode: itemCode})
@@ -163,6 +167,7 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 		response := map[string]interface{}{
 			"item":     itemID,
 			"analyzer": analyzerID,
+			"code":     itemCode,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
