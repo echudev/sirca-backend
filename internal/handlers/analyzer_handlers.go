@@ -164,10 +164,10 @@ func CreateAnalyzer(queries *db.Queries, pool *pgxpool.Pool) http.HandlerFunc {
 		}
 
 		// Preparar y enviar la respuesta
-		response := map[string]interface{}{
-			"item":     itemID,
-			"analyzer": analyzerID,
-			"code":     itemCode,
+		response := map[string]any{
+			"item_id":     itemID,
+			"analyzer_id": analyzerID,
+			"item_code":   itemCode,
 		}
 
 		w.Header().Set("Content-Type", "application/json")
@@ -183,11 +183,11 @@ func GenerateInventaryCode(reqTypeName string, reqBrandName string, reqModelName
 	if len(reqTypeName) < 3 {
 		return "", fmt.Errorf("type name must be at least 3 characters long")
 	}
-	if len(reqModelName) < 3 {
-		return "", fmt.Errorf("model name must be at least 3 characters long")
-	}
 	if len(reqBrandName) < 3 {
 		return "", fmt.Errorf("brand name must be at least 3 characters long")
+	}
+	if len(reqModelName) < 3 {
+		return "", fmt.Errorf("model name must be at least 3 characters long")
 	}
 
 	// Validar fecha
@@ -200,13 +200,10 @@ func GenerateInventaryCode(reqTypeName string, reqBrandName string, reqModelName
 		return "", fmt.Errorf("invalid item ID")
 	}
 
-	type_code := reqTypeName[:3]
-	brand_code := reqBrandName[:3]
-	model_code := reqModelName[:3]
 	year_code := strconv.Itoa(reqItemAdquisitonDate.Time.Year())
 	id_code := strconv.Itoa(int(reqItemId))
 
-	item_code := strings.ToUpper(type_code + "-" + brand_code + "-" + model_code + "-" + year_code + "-" + id_code)
+	item_code := strings.ToUpper(reqTypeName[:3] + "-" + reqBrandName[:3] + "-" + reqModelName[:3] + "-" + year_code + "-" + id_code)
 
 	return item_code, nil
 }
